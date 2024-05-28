@@ -98,6 +98,9 @@ class BEVFormerEncoder(TransformerLayerSequence):
         lidar2img = np.asarray(lidar2img)
         lidar2img = reference_points.new_tensor(lidar2img)  # (B, N, 4, 4)
         reference_points = reference_points.clone()
+        # mcw
+        # lidar2img = img_metas[0]['lidar2img']
+        # reference_points = reference_points.clone()
 
         reference_points[..., 0:1] = reference_points[..., 0:1] * \
             (pc_range[3] - pc_range[0]) + pc_range[0]
@@ -111,7 +114,9 @@ class BEVFormerEncoder(TransformerLayerSequence):
 
         reference_points = reference_points.permute(1, 0, 2, 3)
         D, B, num_query = reference_points.size()[:3]
-        num_cam = lidar2img.size(1)
+        # mcw
+        num_cam = 6
+        # num_cam = lidar2img.size(1)
 
         reference_points = reference_points.view(
             D, B, 1, num_query, 4).repeat(1, 1, num_cam, 1, 1).unsqueeze(-1)

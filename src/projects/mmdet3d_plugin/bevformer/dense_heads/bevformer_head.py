@@ -154,8 +154,8 @@ class BEVFormerHead(DETRHead):
             )
         else:
             outputs = self.transformer(
-                mlvl_feats,
-                bev_queries,
+                mlvl_feats, #torch.Size([1, 6, 256, 15, 25])
+                bev_queries, #torch.Size([2500, 256])
                 object_query_embeds,
                 self.bev_h,
                 self.bev_w,
@@ -499,8 +499,10 @@ class BEVFormerHead(DETRHead):
 
             bboxes[:, 2] = bboxes[:, 2] - bboxes[:, 5] * 0.5
 
+            # mcw
             code_size = bboxes.shape[-1]
             bboxes = img_metas[i]['box_type_3d'](bboxes, code_size)
+            
             scores = preds['scores']
             labels = preds['labels']
 

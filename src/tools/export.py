@@ -1,8 +1,3 @@
-# ---------------------------------------------
-# Copyright (c) OpenMMLab. All rights reserved.
-# ---------------------------------------------
-#  Modified by Zhiqi Li
-# ---------------------------------------------
 import argparse
 import mmcv
 import os
@@ -228,76 +223,39 @@ def main():
         model.PALETTE = dataset.PALETTE
 
     #mcw
-    # print("EXPORT")
-    # import numpy as np
+    print("EXPORT")
+    import numpy as np
 
-    # from functools import partial
-    # model=model.cpu()
-    # model.forward = partial(model.forward_test)
-    # model.eval()
-    # for i, data in enumerate(data_loader):
-    #     with torch.no_grad():
-    #         inputs = {} 
-    #         inputs['img'] = data['img'][0].data[0].float().unsqueeze(0)
-    #         inputs['img_metas'] = [[None]]
-    #         inputs['img_metas'][0][0] = {}
+    from functools import partial
+    model=model.cpu()
+    model.forward = partial(model.forward_test)
+    model.eval()
+    for i, data in enumerate(data_loader):
+        with torch.no_grad():
+            inputs = {} 
+            inputs['img'] = data['img'][0].data[0].float().unsqueeze(0)
+            inputs['img_metas'] = [[None]]
+            inputs['img_metas'][0][0] = {}
 
-    #         inputs['img_metas'][0][0]['can_bus'] = torch.from_numpy(np.array(data['img_metas'][0].data[0][0]['can_bus'])).float()
-    #         inputs['img_metas'][0][0]['lidar2img'] = torch.from_numpy(np.array(data['img_metas'][0].data[0][0]['lidar2img'])).float()
-    #         inputs['img_metas'][0][0]['scene_token'] = 'fcbccedd61424f1b85dcbf8f897f9754'
-    #         inputs['img_metas'][0][0]['img_shape'] = torch.Tensor([[480, 800]])
-    #         # print(inputs['img_metas'], inputs['img'])
-    #         torch.onnx.export(
-    #             model, 
-    #             (inputs['img_metas'], inputs['img']), 
-    #             "artifacts/bevformer.onnx", 
-    #             export_params=True, 
-    #             verbose=True,
-    #             opset_version=16,
-    #         )
-    #         break
-    # import onnx
-    # check_model = onnx.load("artifacts/bevformer.onnx")
-    # onnx.checker.check_model(check_model)
-    # print("Checked")
-    # print("Export Successfully...")
-    # exit()
-
-    if not distributed:
-        assert False
-        # model = MMDataParallel(model, device_ids=[0])
-        # outputs = single_gpu_test(model, data_loader, args.show, args.show_dir)
-    else:
-        model = MMDistributedDataParallel(
-            model.cuda(),
-            device_ids=[torch.cuda.current_device()],
-            broadcast_buffers=False)
-        outputs = custom_multi_gpu_test(model, data_loader, args.tmpdir,
-                                        args.gpu_collect)
-
-    rank, _ = get_dist_info()
-    if rank == 0:
-        if args.out:
-            print(f'\nwriting results to {args.out}')
-            assert False
-            #mmcv.dump(outputs['bbox_results'], args.out)
-        kwargs = {} if args.eval_options is None else args.eval_options
-        kwargs['jsonfile_prefix'] = osp.join('test', args.config.split(
-            '/')[-1].split('.')[-2], time.ctime().replace(' ', '_').replace(':', '_'))
-        if args.format_only:
-            dataset.format_results(outputs, **kwargs)
-
-        if args.eval:
-            eval_kwargs = cfg.get('evaluation', {}).copy()
-            # hard-code way to remove EvalHook args
-            for key in [
-                    'interval', 'tmpdir', 'start', 'gpu_collect', 'save_best',
-                    'rule'
-            ]:
-                eval_kwargs.pop(key, None)
-            eval_kwargs.update(dict(metric=args.eval, **kwargs))
-
-            print(dataset.evaluate(outputs, **eval_kwargs))
+            inputs['img_metas'][0][0]['can_bus'] = torch.from_numpy(np.array(data['img_metas'][0].data[0][0]['can_bus'])).float()
+            inputs['img_metas'][0][0]['lidar2img'] = torch.from_numpy(np.array(data['img_metas'][0].data[0][0]['lidar2img'])).float()
+            inputs['img_metas'][0][0]['scene_token'] = 'fcbccedd61424f1b85dcbf8f897f9754'
+            inputs['img_metas'][0][0]['img_shape'] = torch.Tensor([[480, 800]])
+            # print(inputs['img_metas'], inputs['img'])
+            torch.onnx.export(
+                model, 
+                (inputs['img_metas'], inputs['img']), 
+                "artifacts/bevformer.onnx", 
+                export_params=True, 
+                verbose=True,
+                opset_version=16,
+            )
+            break
+    import onnx
+    check_model = onnx.load("artifacts/bevformer.onnx")
+    onnx.checker.check_model(check_model)
+    print("Checked")
+    print("Export Successfully...")
 
 
 if __name__ == '__main__':

@@ -103,8 +103,8 @@ class PerceptionTransformer(BaseModule):
     @auto_fp16(apply_to=('mlvl_feats', 'bev_queries', 'prev_bev', 'bev_pos'))
     def get_bev_features(
             self,
-            mlvl_feats,
-            bev_queries,
+            mlvl_feats, #torch.Size([1, 6, 256, 15, 25]) 
+            bev_queries, #torch.Size([2500, 256])
             bev_h,
             bev_w,
             grid_length=[0.512, 0.512],
@@ -139,6 +139,33 @@ class PerceptionTransformer(BaseModule):
         shift_x = shift_x * self.use_shift
         shift = bev_queries.new_tensor(
             [shift_x, shift_y]).permute(1, 0)  # xy, bs -> bs, xy
+        # mcw
+        # delta_x = np.array([each['can_bus'][0].cpu().numpy()
+        #                    for each in kwargs['img_metas']])
+        # delta_x = torch.from_numpy(delta_x)
+        
+        # delta_y = np.array([each['can_bus'][1].cpu().numpy()
+        #                    for each in kwargs['img_metas']])
+        # delta_y = torch.from_numpy(delta_y)
+        
+        # ego_angle = np.array(
+        #     [each['can_bus'][-2] / np.pi * 180 for each in kwargs['img_metas']])
+        # ego_angle = torch.from_numpy(ego_angle.astype(np.float32))
+        
+        # grid_length_y = grid_length[0]
+        # grid_length_x = grid_length[1]
+        # translation_length = torch.sqrt(delta_x ** 2 + delta_y ** 2)
+        
+        # translation_angle = torch.atan(delta_y / (delta_x + 1e-6)) / np.pi * 180 ##need change
+        
+        # bev_angle = ego_angle - translation_angle
+        # shift_y = translation_length * \
+        #     torch.cos(bev_angle / 180 * np.pi) / grid_length_y / bev_h
+        # shift_x = translation_length * \
+        #     torch.sin(bev_angle / 180 * np.pi) / grid_length_x / bev_w
+        # shift_y = shift_y * self.use_shift
+        # shift_x = shift_x * self.use_shift
+        # shift = torch.stack([shift_x, shift_y]).permute(1, 0)  # xy, bs -> bs, xy
 
         if prev_bev is not None:
             if prev_bev.shape[1] == bev_h * bev_w:
@@ -156,14 +183,20 @@ class PerceptionTransformer(BaseModule):
                     prev_bev[:, i] = tmp_prev_bev[:, 0]
 
         # add can bus signals
+        # mcw
         can_bus = bev_queries.new_tensor(
             [each['can_bus'] for each in kwargs['img_metas']])  # [:, :]
+        # can_bus = bev_queries.new_tensor(
+        #     [each['can_bus'].cpu().numpy() for each in kwargs['img_metas']])  # [:, :]
+        
         can_bus = self.can_bus_mlp(can_bus)[None, :, :]
+        # mcw
         bev_queries = bev_queries + can_bus * self.use_can_bus
 
         feat_flatten = []
         spatial_shapes = []
         for lvl, feat in enumerate(mlvl_feats):
+            # print("###",feat.shape)
             bs, num_cam, c, h, w = feat.shape
             spatial_shape = (h, w)
             feat = feat.flatten(3).permute(1, 0, 3, 2)
@@ -184,8 +217,8 @@ class PerceptionTransformer(BaseModule):
             0, 2, 1, 3)  # (num_cam, H*W, bs, embed_dims)
 
         bev_embed = self.encoder(
-            bev_queries,
-            feat_flatten,
+            bev_queries,#torch.Size([2500, 1, 256]) 
+            feat_flatten, #torch.Size([6, 375, 1, 256])
             feat_flatten,
             bev_h=bev_h,
             bev_w=bev_w,

@@ -233,7 +233,7 @@ class BEVFormer(MVXTwoStageDetector):
         losses.update(losses_pts)
         return losses
 
-    def forward_test(self, img_metas, img=None, **kwargs):
+    def forward_test(self, img_metas, img=None, return_loss=False, rescale=True):
         for var, name in [(img_metas, 'img_metas')]:
             if not isinstance(var, list):
                 raise TypeError('{} must be a list, but got {}'.format(
@@ -251,8 +251,11 @@ class BEVFormer(MVXTwoStageDetector):
             self.prev_frame_info['prev_bev'] = None
 
         # Get the delta of ego position and angle between two timestamps.
+        # mcw
         tmp_pos = copy.deepcopy(img_metas[0][0]['can_bus'][:3])
         tmp_angle = copy.deepcopy(img_metas[0][0]['can_bus'][-1])
+        # tmp_pos = img_metas[0][0]['can_bus'][:3]
+        # tmp_angle = img_metas[0][0]['can_bus'][-1]
         if self.prev_frame_info['prev_bev'] is not None:
             img_metas[0][0]['can_bus'][:3] -= self.prev_frame_info['prev_pos']
             img_metas[0][0]['can_bus'][-1] -= self.prev_frame_info['prev_angle']
@@ -261,7 +264,7 @@ class BEVFormer(MVXTwoStageDetector):
             img_metas[0][0]['can_bus'][:3] = 0
 
         new_prev_bev, bbox_results = self.simple_test(
-            img_metas[0], img[0], prev_bev=self.prev_frame_info['prev_bev'], **kwargs)
+            img_metas[0], img[0], prev_bev=self.prev_frame_info['prev_bev'], rescale=True)
         # During inference, we save the BEV features and ego motion of each timestamp.
         self.prev_frame_info['prev_pos'] = tmp_pos
         self.prev_frame_info['prev_angle'] = tmp_angle
