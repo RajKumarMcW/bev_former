@@ -1,3 +1,8 @@
+# ---------------------------------------------
+# Copyright (c) OpenMMLab. All rights reserved.
+# ---------------------------------------------
+#  Modified by Zhiqi Li
+# ---------------------------------------------
 import argparse
 import mmcv
 import os
@@ -14,7 +19,6 @@ from mmdet3d.datasets import build_dataset
 from projects.mmdet3d_plugin.datasets.builder import build_dataloader
 from mmdet3d.models import build_model
 from mmdet.apis import set_random_seed
-from projects.mmdet3d_plugin.bevformer.apis.test import custom_multi_gpu_test
 from mmdet.datasets import replace_ImageToTensor
 import time
 import os.path as osp
@@ -200,61 +204,56 @@ def main():
         nonshuffler_sampler=cfg.data.nonshuffler_sampler,
     )
 
-    # build the model and load checkpoint
-    cfg.model.train_cfg = None
-    model = build_model(cfg.model, test_cfg=cfg.get('test_cfg'))
-    fp16_cfg = cfg.get('fp16', None)
-    if fp16_cfg is not None:
-        wrap_fp16_model(model)
-    checkpoint = load_checkpoint(model, args.checkpoint, map_location='cpu')
-    if args.fuse_conv_bn:
-        model = fuse_conv_bn(model)
-    # old versions did not save class info in checkpoints, this walkaround is
-    # for backward compatibility
-    if 'CLASSES' in checkpoint.get('meta', {}):
-        model.CLASSES = checkpoint['meta']['CLASSES']
-    else:
-        model.CLASSES = dataset.CLASSES
-    # palette for visualization in segmentation tasks
-    if 'PALETTE' in checkpoint.get('meta', {}):
-        model.PALETTE = checkpoint['meta']['PALETTE']
-    elif hasattr(dataset, 'PALETTE'):
-        # segmentation dataset has `PALETTE` attribute
-        model.PALETTE = dataset.PALETTE
+    # # build the model and load checkpoint
+    # cfg.model.train_cfg = None
+    # model = build_model(cfg.model, test_cfg=cfg.get('test_cfg'))
+    # fp16_cfg = cfg.get('fp16', None)
+    # if fp16_cfg is not None:
+    #     wrap_fp16_model(model)
+    # checkpoint = load_checkpoint(model, args.checkpoint, map_location='cpu')
+    # if args.fuse_conv_bn:
+    #     model = fuse_conv_bn(model)
+    # # old versions did not save class info in checkpoints, this walkaround is
+    # # for backward compatibility
+    # if 'CLASSES' in checkpoint.get('meta', {}):
+    #     model.CLASSES = checkpoint['meta']['CLASSES']
+    # else:
+    #     model.CLASSES = dataset.CLASSES
+    # # palette for visualization in segmentation tasks
+    # if 'PALETTE' in checkpoint.get('meta', {}):
+    #     model.PALETTE = checkpoint['meta']['PALETTE']
+    # elif hasattr(dataset, 'PALETTE'):
+    #     # segmentation dataset has `PALETTE` attribute
+    #     model.PALETTE = dataset.PALETTE
 
-    #mcw
-    print("EXPORT")
-    import numpy as np
+    import onnxruntime as ort
+    from onnxsim import simplify
+    import onnx
 
-    from functools import partial
-    model=model.cpu()
-    model.forward = partial(model.forward_export)
-    model.eval()
+    # model = onnx.load("/media/ava/DATA2/Raj/BEVFormer/bevformer.onnx")
+    # model_simplified, check = simplify(model)
+    # onnx.save(model_simplified, 'simplified_model.onnx')
+
+    # print(check)
+
+    sess=ort.InferenceSession("simplified_model.onnx")
     for i, data in enumerate(data_loader):
         with torch.no_grad():
             inputs = {} 
             inputs['img'] = data['img'][0].data[0].float().unsqueeze(0)
             torch.manual_seed(42)
-            prev_bev = torch.randn(2500, 1, 256)
-            out=model(inputs['img'],prev_bev)
-            print(out)
-            for key,array in out.items():
-                np.save(f"{key}.npy", array)
-            # torch.onnx.export(
-            #     model, 
-            #     (inputs['img'],prev_bev), 
-            #     "bevformer.onnx", 
-            #     export_params=True, 
-            #     verbose=True,
-            #     opset_version=16,
-            # )
+            inputs['prev_bev'] = torch.randn(2500, 1, 256)
+            inputs['img'] = inputs['img'].numpy()
+            inputs['prev_bev'] = inputs['prev_bev'].numpy()
+            inputs = {
+                        'onnx::Gather_0': inputs['img'],
+                        'onnx::Gather_1': inputs['prev_bev']
+                    }
+            output=sess.run(None, inputs)
+            print(output)
             break
-    import onnx
-    check_model = onnx.load("bevformer.onnx")
-    onnx.checker.check_model(check_model)
-    print("Checked")
-    # onnx.sim
-    print("Export Successfully...")
+            
+
 
 
 if __name__ == '__main__':

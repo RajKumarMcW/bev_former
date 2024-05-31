@@ -61,11 +61,11 @@ class SpatialCrossAttention(BaseModule):
         self.dropout = nn.Dropout(dropout)
         self.pc_range = pc_range
         self.fp16_enabled = False
-        # self.deformable_attention = build_attention(deformable_attention)
+        self.deformable_attention = build_attention(deformable_attention)
         #mcw
-        self.global_attention= build_attention(dict(
-                     type='GlobalCrossAttention',
-                     dim=256))
+        # self.global_attention= build_attention(dict(
+        #              type='GlobalCrossAttention',
+        #              dim=256))
         self.embed_dims = embed_dims
         self.num_cams = num_cams
         self.output_proj = nn.Linear(embed_dims, embed_dims)
@@ -266,10 +266,10 @@ class SpatialCrossAttention(BaseModule):
         value = value.permute(2, 0, 1, 3).reshape(
             bs * self.num_cams, l, self.embed_dims)
 
-        # queries = self.deformable_attention(query=queries_rebatch.view(bs*self.num_cams, max_len, self.embed_dims), key=key, value=value,
-        #                                     reference_points=reference_points_rebatch.view(bs*self.num_cams, max_len, D, 2), spatial_shapes=spatial_shapes,
-        #                                     level_start_index=level_start_index).view(bs, self.num_cams, max_len, self.embed_dims)
-        queries =self.global_attention(query,key,value)
+        queries = self.deformable_attention(query=queries_rebatch.view(bs*self.num_cams, max_len, self.embed_dims), key=key, value=value,
+                                            reference_points=reference_points_rebatch.view(bs*self.num_cams, max_len, D, 2), spatial_shapes=spatial_shapes,
+                                            level_start_index=level_start_index).view(bs, self.num_cams, max_len, self.embed_dims)
+        # queries =self.global_attention(query,key,value)
         # print(len(indexes),slots.shape,queries.shape)
         for j in range(bs):
             for i, index_query_per_img in enumerate(indexes):

@@ -1,0 +1,180 @@
+/media/ava/DATA2/Raj/rajkumar/lib/python3.8/site-packages/mmcv/__init__.py:20: UserWarning: On January 1, 2023, MMCV will release v2.0.0, in which it will remove components related to the training process and add a data transformation module. In addition, it will rename the package names mmcv to mmcv-lite and mmcv-full to mmcv. See https://github.com/open-mmlab/mmcv/blob/master/docs/en/compatibility.md for more details.
+  warnings.warn(
+Config:
+ Config (path: configs/bevformer/bevformer_tiny.py): {'point_cloud_range': [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0], 'class_names': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'], 'dataset_type': 'CustomNuScenesDataset', 'data_root': '/media/ava/DATA2/datasets/BEVFormer/data/nuscenes/', 'input_modality': {'use_lidar': False, 'use_camera': True, 'use_radar': False, 'use_map': False, 'use_external': True}, 'file_client_args': {'backend': 'disk'}, 'train_pipeline': [{'type': 'LoadMultiViewImageFromFiles', 'to_float32': True}, {'type': 'PhotoMetricDistortionMultiViewImage'}, {'type': 'LoadAnnotations3D', 'with_bbox_3d': True, 'with_label_3d': True, 'with_attr_label': False}, {'type': 'ObjectRangeFilter', 'point_cloud_range': [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]}, {'type': 'ObjectNameFilter', 'classes': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']}, {'type': 'NormalizeMultiviewImage', 'mean': [123.675, 116.28, 103.53], 'std': [58.395, 57.12, 57.375], 'to_rgb': True}, {'type': 'RandomScaleImageMultiViewImage', 'scales': [0.5]}, {'type': 'PadMultiViewImage', 'size_divisor': 32}, {'type': 'DefaultFormatBundle3D', 'class_names': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']}, {'type': 'CustomCollect3D', 'keys': ['gt_bboxes_3d', 'gt_labels_3d', 'img']}], 'test_pipeline': [{'type': 'LoadMultiViewImageFromFiles', 'to_float32': True}, {'type': 'NormalizeMultiviewImage', 'mean': [123.675, 116.28, 103.53], 'std': [58.395, 57.12, 57.375], 'to_rgb': True}, {'type': 'MultiScaleFlipAug3D', 'img_scale': (1600, 900), 'pts_scale_ratio': 1, 'flip': False, 'transforms': [{'type': 'RandomScaleImageMultiViewImage', 'scales': [0.5]}, {'type': 'PadMultiViewImage', 'size_divisor': 32}, {'type': 'DefaultFormatBundle3D', 'class_names': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'], 'with_label': False}, {'type': 'CustomCollect3D', 'keys': ['img']}]}], 'eval_pipeline': [{'type': 'LoadPointsFromFile', 'coord_type': 'LIDAR', 'load_dim': 5, 'use_dim': 5, 'file_client_args': {'backend': 'disk'}}, {'type': 'LoadPointsFromMultiSweeps', 'sweeps_num': 10, 'file_client_args': {'backend': 'disk'}}, {'type': 'DefaultFormatBundle3D', 'class_names': ['car', 'truck', 'trailer', 'bus', 'construction_vehicle', 'bicycle', 'motorcycle', 'pedestrian', 'traffic_cone', 'barrier'], 'with_label': False}, {'type': 'Collect3D', 'keys': ['points']}], 'data': {'samples_per_gpu': 1, 'workers_per_gpu': 4, 'train': {'type': 'CustomNuScenesDataset', 'data_root': '/media/ava/DATA2/datasets/BEVFormer/data/nuscenes/', 'ann_file': '/media/ava/DATA2/datasets/BEVFormer/data/nuscenes/nuscenes_infos_temporal_train.pkl', 'pipeline': [{'type': 'LoadMultiViewImageFromFiles', 'to_float32': True}, {'type': 'PhotoMetricDistortionMultiViewImage'}, {'type': 'LoadAnnotations3D', 'with_bbox_3d': True, 'with_label_3d': True, 'with_attr_label': False}, {'type': 'ObjectRangeFilter', 'point_cloud_range': [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]}, {'type': 'ObjectNameFilter', 'classes': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']}, {'type': 'NormalizeMultiviewImage', 'mean': [123.675, 116.28, 103.53], 'std': [58.395, 57.12, 57.375], 'to_rgb': True}, {'type': 'RandomScaleImageMultiViewImage', 'scales': [0.5]}, {'type': 'PadMultiViewImage', 'size_divisor': 32}, {'type': 'DefaultFormatBundle3D', 'class_names': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']}, {'type': 'CustomCollect3D', 'keys': ['gt_bboxes_3d', 'gt_labels_3d', 'img']}], 'classes': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'], 'modality': {'use_lidar': False, 'use_camera': True, 'use_radar': False, 'use_map': False, 'use_external': True}, 'test_mode': False, 'box_type_3d': 'LiDAR', 'use_valid_flag': True, 'bev_size': (50, 50), 'queue_length': 3}, 'val': {'type': 'CustomNuScenesDataset', 'ann_file': '/media/ava/DATA2/datasets/BEVFormer/data/nuscenes/nuscenes_infos_temporal_val.pkl', 'pipeline': [{'type': 'LoadMultiViewImageFromFiles', 'to_float32': True}, {'type': 'NormalizeMultiviewImage', 'mean': [123.675, 116.28, 103.53], 'std': [58.395, 57.12, 57.375], 'to_rgb': True}, {'type': 'MultiScaleFlipAug3D', 'img_scale': (1600, 900), 'pts_scale_ratio': 1, 'flip': False, 'transforms': [{'type': 'RandomScaleImageMultiViewImage', 'scales': [0.5]}, {'type': 'PadMultiViewImage', 'size_divisor': 32}, {'type': 'DefaultFormatBundle3D', 'class_names': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'], 'with_label': False}, {'type': 'CustomCollect3D', 'keys': ['img']}]}], 'classes': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'], 'modality': {'use_lidar': False, 'use_camera': True, 'use_radar': False, 'use_map': False, 'use_external': True}, 'test_mode': True, 'box_type_3d': 'LiDAR', 'data_root': '/media/ava/DATA2/datasets/BEVFormer/data/nuscenes/', 'bev_size': (50, 50), 'samples_per_gpu': 1}, 'test': {'type': 'CustomNuScenesDataset', 'data_root': '/media/ava/DATA2/datasets/BEVFormer/data/nuscenes/', 'ann_file': '/media/ava/DATA2/datasets/BEVFormer/data/nuscenes/nuscenes_infos_temporal_val.pkl', 'pipeline': [{'type': 'LoadMultiViewImageFromFiles', 'to_float32': True}, {'type': 'NormalizeMultiviewImage', 'mean': [123.675, 116.28, 103.53], 'std': [58.395, 57.12, 57.375], 'to_rgb': True}, {'type': 'MultiScaleFlipAug3D', 'img_scale': (1600, 900), 'pts_scale_ratio': 1, 'flip': False, 'transforms': [{'type': 'RandomScaleImageMultiViewImage', 'scales': [0.5]}, {'type': 'PadMultiViewImage', 'size_divisor': 32}, {'type': 'DefaultFormatBundle3D', 'class_names': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'], 'with_label': False}, {'type': 'CustomCollect3D', 'keys': ['img']}]}], 'classes': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'], 'modality': {'use_lidar': False, 'use_camera': True, 'use_radar': False, 'use_map': False, 'use_external': True}, 'test_mode': True, 'box_type_3d': 'LiDAR', 'bev_size': (50, 50)}, 'shuffler_sampler': {'type': 'DistributedGroupSampler'}, 'nonshuffler_sampler': {'type': 'DistributedSampler'}}, 'evaluation': {'interval': 1, 'pipeline': [{'type': 'LoadMultiViewImageFromFiles', 'to_float32': True}, {'type': 'NormalizeMultiviewImage', 'mean': [123.675, 116.28, 103.53], 'std': [58.395, 57.12, 57.375], 'to_rgb': True}, {'type': 'MultiScaleFlipAug3D', 'img_scale': (1600, 900), 'pts_scale_ratio': 1, 'flip': False, 'transforms': [{'type': 'RandomScaleImageMultiViewImage', 'scales': [0.5]}, {'type': 'PadMultiViewImage', 'size_divisor': 32}, {'type': 'DefaultFormatBundle3D', 'class_names': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'], 'with_label': False}, {'type': 'CustomCollect3D', 'keys': ['img']}]}]}, 'checkpoint_config': {'interval': 1}, 'log_config': {'interval': 50, 'hooks': [{'type': 'TextLoggerHook'}, {'type': 'TensorboardLoggerHook'}]}, 'dist_params': {'backend': 'nccl'}, 'log_level': 'INFO', 'work_dir': None, 'load_from': None, 'resume_from': None, 'workflow': [('train', 1)], 'plugin': True, 'plugin_dir': 'projects/mmdet3d_plugin/', 'voxel_size': [0.2, 0.2, 8], 'img_norm_cfg': {'mean': [123.675, 116.28, 103.53], 'std': [58.395, 57.12, 57.375], 'to_rgb': True}, '_dim_': 256, '_pos_dim_': 128, '_ffn_dim_': 512, '_num_levels_': 1, 'bev_h_': 50, 'bev_w_': 50, 'queue_length': 3, 'model': {'type': 'BEVFormer', 'use_grid_mask': True, 'video_test_mode': True, 'pretrained': {'img': 'torchvision://resnet50'}, 'img_backbone': {'type': 'ResNet', 'depth': 50, 'num_stages': 4, 'out_indices': (3,), 'frozen_stages': 1, 'norm_cfg': {'type': 'BN', 'requires_grad': False}, 'norm_eval': True, 'style': 'pytorch'}, 'img_neck': {'type': 'FPN', 'in_channels': [2048], 'out_channels': 256, 'start_level': 0, 'add_extra_convs': 'on_output', 'num_outs': 1, 'relu_before_extra_convs': True}, 'pts_bbox_head': {'type': 'BEVFormerHead', 'bev_h': 50, 'bev_w': 50, 'num_query': 900, 'num_classes': 10, 'in_channels': 256, 'sync_cls_avg_factor': True, 'with_box_refine': True, 'as_two_stage': False, 'transformer': {'type': 'PerceptionTransformer', 'rotate_prev_bev': True, 'use_shift': True, 'use_can_bus': True, 'embed_dims': 256, 'encoder': {'type': 'BEVFormerEncoder', 'num_layers': 3, 'pc_range': [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0], 'num_points_in_pillar': 4, 'return_intermediate': False, 'transformerlayers': {'type': 'BEVFormerLayer', 'attn_cfgs': [{'type': 'TemporalSelfAttention', 'embed_dims': 256, 'num_levels': 1}, {'type': 'SpatialCrossAttention', 'pc_range': [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0], 'deformable_attention': {'type': 'MSDeformableAttention3D', 'embed_dims': 256, 'num_points': 8, 'num_levels': 1}, 'embed_dims': 256}], 'feedforward_channels': 512, 'ffn_dropout': 0.1, 'operation_order': ('self_attn', 'norm', 'cross_attn', 'norm', 'ffn', 'norm')}}, 'decoder': {'type': 'DetectionTransformerDecoder', 'num_layers': 6, 'return_intermediate': True, 'transformerlayers': {'type': 'DetrTransformerDecoderLayer', 'attn_cfgs': [{'type': 'MultiheadAttention', 'embed_dims': 256, 'num_heads': 8, 'dropout': 0.1}, {'type': 'CustomMSDeformableAttention', 'embed_dims': 256, 'num_levels': 1}], 'feedforward_channels': 512, 'ffn_dropout': 0.1, 'operation_order': ('self_attn', 'norm', 'cross_attn', 'norm', 'ffn', 'norm')}}}, 'bbox_coder': {'type': 'NMSFreeCoder', 'post_center_range': [-61.2, -61.2, -10.0, 61.2, 61.2, 10.0], 'pc_range': [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0], 'max_num': 300, 'voxel_size': [0.2, 0.2, 8], 'num_classes': 10}, 'positional_encoding': {'type': 'LearnedPositionalEncoding', 'num_feats': 128, 'row_num_embed': 50, 'col_num_embed': 50}, 'loss_cls': {'type': 'FocalLoss', 'use_sigmoid': True, 'gamma': 2.0, 'alpha': 0.25, 'loss_weight': 2.0}, 'loss_bbox': {'type': 'L1Loss', 'loss_weight': 0.25}, 'loss_iou': {'type': 'GIoULoss', 'loss_weight': 0.0}}, 'train_cfg': {'pts': {'grid_size': [512, 512, 1], 'voxel_size': [0.2, 0.2, 8], 'point_cloud_range': [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0], 'out_size_factor': 4, 'assigner': {'type': 'HungarianAssigner3D', 'cls_cost': {'type': 'FocalLossCost', 'weight': 2.0}, 'reg_cost': {'type': 'BBox3DL1Cost', 'weight': 0.25}, 'iou_cost': {'type': 'IoUCost', 'weight': 0.0}, 'pc_range': [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]}}}}, 'optimizer': {'type': 'AdamW', 'lr': 0.0002, 'paramwise_cfg': {'custom_keys': {'img_backbone': {'lr_mult': 0.1}}}, 'weight_decay': 0.01}, 'optimizer_config': {'grad_clip': {'max_norm': 35, 'norm_type': 2}}, 'lr_config': {'policy': 'CosineAnnealing', 'warmup': 'linear', 'warmup_iters': 500, 'warmup_ratio': 0.3333333333333333, 'min_lr_ratio': 0.001}, 'total_epochs': 24, 'runner': {'type': 'EpochBasedRunner', 'max_epochs': 24}} 
+
+projects.mmdet3d_plugin
+/media/ava/DATA2/Raj/BEVFormer/src/projects/mmdet3d_plugin/bevformer/modules/custom_base_transformer_layer.py:94: UserWarning: The arguments `feedforward_channels` in BaseTransformerLayer has been deprecated, now you should set `feedforward_channels` and other FFN related arguments to a dict named `ffn_cfgs`. 
+  warnings.warn(
+/media/ava/DATA2/Raj/BEVFormer/src/projects/mmdet3d_plugin/bevformer/modules/custom_base_transformer_layer.py:94: UserWarning: The arguments `ffn_dropout` in BaseTransformerLayer has been deprecated, now you should set `ffn_drop` and other FFN related arguments to a dict named `ffn_cfgs`. 
+  warnings.warn(
+/media/ava/DATA2/Raj/BEVFormer/src/projects/mmdet3d_plugin/bevformer/modules/custom_base_transformer_layer.py:94: UserWarning: The arguments `ffn_num_fcs` in BaseTransformerLayer has been deprecated, now you should set `num_fcs` and other FFN related arguments to a dict named `ffn_cfgs`. 
+  warnings.warn(
+load checkpoint from local path: artifacts/bevformer_tiny_epoch_24.pth
+EXPORT
+/media/ava/DATA2/Raj/BEVFormer/src/projects/mmdet3d_plugin/bevformer/modules/transformer.py:325: UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow. Please consider converting the list to a single numpy.ndarray with numpy.array() before converting to a tensor. (Triggered internally at  ../torch/csrc/utils/tensor_new.cpp:201.)
+  can_bus = bev_queries.new_tensor(
+/media/ava/DATA2/Raj/rajkumar/lib/python3.8/site-packages/torch/functional.py:478: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  ../aten/src/ATen/native/TensorShape.cpp:2894.)
+  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
+{'bev_embed': tensor([[[-0.8301,  0.0396, -0.4063,  ..., -0.0875, -1.5245,  0.0041]],
+
+        [[-0.7341,  0.1529, -0.6986,  ..., -0.2712, -1.0823,  0.4873]],
+
+        [[-0.1757,  0.3756, -0.8713,  ..., -0.5828, -1.1525,  0.3163]],
+
+        ...,
+
+        [[-0.4914, -0.2039, -1.4452,  ...,  1.3991,  0.0434,  1.0028]],
+
+        [[-0.3812, -0.8275, -0.6382,  ...,  0.5919, -0.1027,  0.5181]],
+
+        [[-0.3426, -0.3731, -1.5735,  ...,  0.2851,  0.2333,  1.1595]]]), 'all_cls_scores': tensor([[[[-5.8149, -6.0624, -5.8894,  ..., -4.2301, -0.8035, -5.3169],
+          [-7.7723, -8.2489, -8.0975,  ..., -5.2434, -4.7813, -4.3157],
+          [-7.3319, -7.9425, -8.7712,  ..., -5.8960, -4.4032, -5.6000],
+          ...,
+          [-7.5766, -8.8715, -8.8372,  ..., -5.3043, -5.0551, -5.6927],
+          [-6.1488, -7.0260, -6.2931,  ..., -3.6509, -3.8379, -4.2078],
+          [-9.3713, -9.4741, -9.0995,  ..., -5.8739, -5.1112, -5.7103]]],
+
+
+        [[[-5.2874, -5.7850, -5.9650,  ..., -4.2014, -0.8608, -5.3653],
+          [-7.0599, -7.4610, -8.4568,  ..., -4.9515, -4.5024, -4.9286],
+          [-7.4122, -8.0584, -9.5021,  ..., -6.1562, -5.5002, -5.4044],
+          ...,
+          [-7.5734, -7.9257, -9.2223,  ..., -5.0427, -4.7456, -5.7173],
+          [-6.0715, -6.4973, -6.1885,  ..., -3.4179, -3.5057, -4.3589],
+          [-8.0389, -8.4314, -9.4715,  ..., -6.2020, -6.9229, -5.7821]]],
+
+
+        [[[-5.3268, -6.0909, -6.3517,  ..., -4.3516, -0.8744, -5.3422],
+          [-7.2571, -7.7062, -8.2486,  ..., -4.9866, -4.0288, -4.4104],
+          [-7.7688, -7.7695, -9.1524,  ..., -5.4564, -4.7034, -5.0810],
+          ...,
+          [-7.2351, -8.0940, -8.7951,  ..., -5.2259, -4.3965, -5.2601],
+          [-5.9658, -6.2253, -6.1251,  ..., -3.3781, -3.1538, -4.0255],
+          [-8.8637, -8.8899, -9.7800,  ..., -6.1628, -6.5851, -4.6390]]],
+
+
+        [[[-4.6704, -5.1712, -5.9614,  ..., -4.3305, -0.9363, -5.0194],
+          [-7.1848, -7.6595, -8.7679,  ..., -4.9616, -4.3893, -4.8710],
+          [-7.5212, -7.7090, -8.9391,  ..., -5.8352, -4.7828, -5.1075],
+          ...,
+          [-7.2182, -8.1835, -8.9106,  ..., -4.7350, -4.7782, -5.5091],
+          [-5.3008, -5.9101, -6.2540,  ..., -3.1418, -3.2690, -4.2862],
+          [-8.3260, -7.6834, -8.8055,  ..., -6.7365, -7.3381, -4.9848]]],
+
+
+        [[[-4.8637, -5.4177, -5.7141,  ..., -4.0378, -0.8844, -4.4451],
+          [-7.1875, -7.7548, -8.7221,  ..., -4.8489, -4.4718, -5.1959],
+          [-7.6736, -8.2338, -9.2600,  ..., -5.1272, -4.6758, -5.2355],
+          ...,
+          [-7.4529, -8.3710, -9.2099,  ..., -4.9326, -4.9380, -5.8135],
+          [-5.8975, -6.4927, -6.4875,  ..., -3.4002, -3.2309, -4.2761],
+          [-8.5821, -8.6994, -9.2716,  ..., -5.9336, -6.5571, -5.0240]]],
+
+
+        [[[-4.7940, -4.9064, -5.3816,  ..., -3.7365, -0.9219, -4.2388],
+          [-7.3033, -7.6333, -8.2240,  ..., -5.1666, -4.4301, -4.9646],
+          [-7.3014, -7.4697, -8.7041,  ..., -5.6037, -4.6346, -5.4044],
+          ...,
+          [-7.2195, -7.7123, -8.7399,  ..., -5.1596, -5.1447, -5.9150],
+          [-5.5305, -6.2867, -6.4549,  ..., -3.4474, -3.0321, -4.2528],
+          [-8.0768, -7.9516, -8.7944,  ..., -6.3305, -6.4978, -4.6280]]]]), 'all_bbox_preds': tensor([[[[ 1.3180e+01, -4.5248e+01, -4.0100e-01,  ..., -8.4277e-01,
+            2.5174e-03,  8.9948e-01],
+          [ 1.7077e+01,  5.8692e+00, -8.9949e-01,  ...,  7.0599e-02,
+            6.2110e-03,  2.2436e-05],
+          [-1.5787e+00,  5.3786e+00, -4.1633e-01,  ..., -9.1484e-01,
+            8.5631e-03,  7.3837e-01],
+          ...,
+          [ 1.8690e+01,  2.0229e+01, -3.2476e-01,  ..., -2.6338e-02,
+            2.8857e-02, -3.7789e-01],
+          [-2.1293e+01,  4.6885e+01, -3.0525e-01,  ...,  3.7702e-02,
+            2.0082e-02, -6.0992e-03],
+          [ 8.1994e+00,  1.6644e+00, -4.9299e-01,  ...,  3.3767e-01,
+            8.4062e-03, -5.0703e-01]]],
+
+
+        [[[ 1.3516e+01, -4.5175e+01, -4.1433e-01,  ..., -9.6608e-01,
+            6.5063e-03,  8.8937e-01],
+          [ 1.7740e+01,  5.1256e+00, -4.7862e-01,  ...,  4.7968e-01,
+            1.9408e-01, -2.4831e-01],
+          [-1.2665e+00,  4.8672e+00, -6.1141e-01,  ..., -9.4608e-01,
+           -3.2385e-03,  1.4820e-01],
+          ...,
+          [ 1.8646e+01,  2.1089e+01, -3.2453e-01,  ...,  7.4023e-02,
+           -9.6811e-01,  1.7665e-01],
+          [-2.2210e+01,  4.7044e+01, -4.0723e-01,  ..., -1.5462e-01,
+           -7.0267e-03,  1.4519e-03],
+          [ 7.5178e+00,  1.7430e+00, -6.1984e-01,  ...,  3.9924e-01,
+           -2.5309e-03, -1.1981e-01]]],
+
+
+        [[[ 1.3520e+01, -4.5248e+01, -3.6199e-01,  ..., -9.7979e-01,
+           -8.6935e-02,  8.9064e-01],
+          [ 1.7563e+01,  5.4263e+00, -5.1728e-01,  ...,  2.7194e-01,
+            3.5431e-02, -1.8342e-01],
+          [-1.2732e+00,  4.8885e+00, -5.8765e-01,  ..., -8.5385e-01,
+           -6.7283e-03,  3.7325e-01],
+          ...,
+          [ 1.8522e+01,  2.1412e+01, -4.1332e-01,  ..., -2.9727e-02,
+           -4.6222e-01,  1.2390e-01],
+          [-2.2140e+01,  4.7101e+01, -4.8013e-01,  ..., -1.0118e-01,
+           -1.3043e-03,  1.1313e-01],
+          [ 7.3586e+00,  2.5756e+00, -1.0221e+00,  ...,  3.0922e-01,
+            1.0700e-04,  1.9464e-02]]],
+
+
+        [[[ 1.3531e+01, -4.5256e+01, -3.1057e-01,  ..., -8.9915e-01,
+            1.7188e-01,  9.6571e-01],
+          [ 1.7642e+01,  5.7999e+00, -5.2955e-01,  ...,  5.7340e-01,
+            5.4814e-01, -2.7994e-01],
+          [-1.1387e+00,  4.9593e+00, -4.7445e-01,  ..., -8.2307e-01,
+            1.3975e-03,  9.0351e-02],
+          ...,
+          [ 1.8522e+01,  2.1314e+01, -3.4330e-01,  ..., -5.3858e-02,
+           -1.6860e-01, -1.3751e-01],
+          [-2.1986e+01,  4.7126e+01, -3.8268e-01,  ..., -1.1522e-01,
+           -7.2233e-06,  1.7500e-05],
+          [ 7.2958e+00,  2.9870e+00, -9.4108e-01,  ..., -3.9181e-01,
+            4.0919e-05, -8.1084e-05]]],
+
+
+        [[[ 1.3558e+01, -4.5269e+01, -3.2461e-01,  ..., -8.8459e-01,
+            2.4981e-01,  9.2814e-01],
+          [ 1.7681e+01,  5.8470e+00, -4.9074e-01,  ...,  5.3052e-01,
+            2.9590e-01, -1.2706e-01],
+          [-9.9813e-01,  4.8987e+00, -3.5889e-01,  ..., -8.9884e-01,
+           -7.0630e-04,  4.6387e-02],
+          ...,
+          [ 1.8512e+01,  2.1427e+01, -3.5710e-01,  ...,  3.9235e-01,
+           -8.6126e-01, -2.6612e-02],
+          [-2.1942e+01,  4.7145e+01, -4.1556e-01,  ...,  7.5368e-01,
+            4.8047e-02, -4.1300e-01],
+          [ 6.9052e+00,  2.9533e+00, -9.9968e-01,  ...,  2.6499e-01,
+            2.7801e-05, -7.1103e-06]]],
+
+
+        [[[ 1.3463e+01, -4.5240e+01, -3.2071e-01,  ..., -8.6917e-01,
+            2.9307e-01,  1.0329e+00],
+          [ 1.7742e+01,  5.8465e+00, -5.7829e-01,  ...,  3.9647e-01,
+            3.0855e-05, -1.6434e-05],
+          [-1.0456e+00,  4.9981e+00, -3.5520e-01,  ..., -8.5933e-01,
+            9.4699e-03,  9.6563e-02],
+          ...,
+          [ 1.8591e+01,  2.1306e+01, -3.3460e-01,  ...,  1.7840e-01,
+           -2.0032e-01, -4.6205e-02],
+          [-2.1935e+01,  4.7152e+01, -3.6940e-01,  ...,  4.2040e-01,
+            2.3933e-02, -3.3266e-01],
+          [ 6.8634e+00,  2.6589e+00, -1.0930e+00,  ..., -1.0192e-02,
+            4.8137e-05,  1.2097e-05]]]]), 'enc_cls_scores': None, 'enc_bbox_preds': None}
+Checked
+Export Successfully...
+/media/ava/DATA2/Raj/rajkumar/lib/python3.8/site-packages/torch/distributed/launch.py:178: FutureWarning: The module torch.distributed.launch is deprecated
+and will be removed in future. Use torchrun.
+Note that --use_env is set by default in torchrun.
+If your script expects `--local_rank` argument to be set, please
+change it to read from `os.environ['LOCAL_RANK']` instead. See 
+https://pytorch.org/docs/stable/distributed.html#launch-utility for 
+further instructions
+
+  warnings.warn(

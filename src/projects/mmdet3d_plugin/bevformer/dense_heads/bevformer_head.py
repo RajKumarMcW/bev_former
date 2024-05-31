@@ -115,7 +115,7 @@ class BEVFormerHead(DETRHead):
                 nn.init.constant_(m[-1].bias, bias_init)
 
     @auto_fp16(apply_to=('mlvl_feats'))
-    def forward(self, mlvl_feats, img_metas, prev_bev=None,  only_bev=False):
+    def forward(self, mlvl_feats, img_metas, prev_bev=None,  only_bev=False,export=False):
         """Forward function.
         Args:
             mlvl_feats (tuple[Tensor]): Features from the upstream
@@ -140,19 +140,8 @@ class BEVFormerHead(DETRHead):
                                device=bev_queries.device).to(dtype)
         bev_pos = self.positional_encoding(bev_mask).to(dtype)
 
-        if only_bev:  # only use encoder to obtain BEV features, TODO: refine the workaround
-            return self.transformer.get_bev_features(
-                mlvl_feats,
-                bev_queries,
-                self.bev_h,
-                self.bev_w,
-                grid_length=(self.real_h / self.bev_h,
-                             self.real_w / self.bev_w),
-                bev_pos=bev_pos,
-                img_metas=img_metas,
-                prev_bev=prev_bev,
-            )
-        else:
+        #mcw
+        if export:
             outputs = self.transformer(
                 mlvl_feats, #torch.Size([1, 6, 256, 15, 25])
                 bev_queries, #torch.Size([2500, 256])
@@ -165,8 +154,39 @@ class BEVFormerHead(DETRHead):
                 reg_branches=self.reg_branches if self.with_box_refine else None,  # noqa:E501
                 cls_branches=self.cls_branches if self.as_two_stage else None,
                 img_metas=img_metas,
-                prev_bev=prev_bev
-        )
+                prev_bev=prev_bev,
+                export=True
+            )
+            # return outputs
+        
+        else:
+            if only_bev:  # only use encoder to obtain BEV features, TODO: refine the workaround
+                return self.transformer.get_bev_features(
+                    mlvl_feats,
+                    bev_queries,
+                    self.bev_h,
+                    self.bev_w,
+                    grid_length=(self.real_h / self.bev_h,
+                                self.real_w / self.bev_w),
+                    bev_pos=bev_pos,
+                    img_metas=img_metas,
+                    prev_bev=prev_bev,
+                )
+            else:
+                outputs = self.transformer(
+                    mlvl_feats, #torch.Size([1, 6, 256, 15, 25])
+                    bev_queries, #torch.Size([2500, 256])
+                    object_query_embeds,
+                    self.bev_h,
+                    self.bev_w,
+                    grid_length=(self.real_h / self.bev_h,
+                                self.real_w / self.bev_w),
+                    bev_pos=bev_pos,
+                    reg_branches=self.reg_branches if self.with_box_refine else None,  # noqa:E501
+                    cls_branches=self.cls_branches if self.as_two_stage else None,
+                    img_metas=img_metas,
+                    prev_bev=prev_bev
+            )
 
         bev_embed, hs, init_reference, inter_references = outputs
         hs = hs.permute(0, 2, 1, 3)

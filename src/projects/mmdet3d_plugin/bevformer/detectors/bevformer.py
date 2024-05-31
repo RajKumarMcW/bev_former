@@ -262,7 +262,8 @@ class BEVFormer(MVXTwoStageDetector):
         else:
             img_metas[0][0]['can_bus'][-1] = 0
             img_metas[0][0]['can_bus'][:3] = 0
-
+        # if self.prev_frame_info['prev_bev'] is not None:
+        #     print("@@",self.prev_frame_info['prev_bev'].shape)
         new_prev_bev, bbox_results = self.simple_test(
             img_metas[0], img[0], prev_bev=self.prev_frame_info['prev_bev'], rescale=True)
         # During inference, we save the BEV features and ego motion of each timestamp.
@@ -293,3 +294,111 @@ class BEVFormer(MVXTwoStageDetector):
         for result_dict, pts_bbox in zip(bbox_list, bbox_pts):
             result_dict['pts_bbox'] = pts_bbox
         return new_prev_bev, bbox_list
+
+    # mcw
+    def forward_export(self, img,prev_bev):
+        #mcw
+        can_bus = torch.tensor(np.fromfile("/media/ava/DATA2/Raj/BEVFormer/artifacts/can_bus.npy", dtype=np.float32))
+        lidar2img = torch.tensor(np.fromfile("/media/ava/DATA2/Raj/BEVFormer/artifacts/lidar2img.npy", dtype=np.float32)).reshape(1,6,4,4)
+        lidar2img = lidar2img[:,:6]
+        img_metas = [{'can_bus':can_bus, 'lidar2img':lidar2img}]
+
+        for var, name in [(img_metas, 'img_metas')]:
+            if not isinstance(var, list):
+                raise TypeError('{} must be a list, but got {}'.format(
+                    name, type(var)))
+        img = [img] if img is None else img
+
+        # if img_metas[0][0]['scene_token'] != self.prev_frame_info['scene_token']:
+        #     # the first sample of each scene is truncated
+        #     self.prev_frame_info['prev_bev'] = None
+        # # update idx
+        # self.prev_frame_info['scene_token'] = img_metas[0][0]['scene_token']
+
+        # # do not use temporal information
+        # if not self.video_test_mode:
+        #     self.prev_frame_info['prev_bev'] = None
+
+        # Get the delta of ego position and angle between two timestamps.
+        # tmp_pos = copy.deepcopy(img_metas[0][0]['can_bus'][:3])
+        # tmp_angle = copy.deepcopy(img_metas[0][0]['can_bus'][-1])
+        # print(img_metas)
+        tmp_pos = img_metas[0]['can_bus'][:3]
+        tmp_angle = img_metas[0]['can_bus'][-1]
+        if self.prev_frame_info['prev_bev'] is not None:
+            img_metas[0]['can_bus'][:3] -= self.prev_frame_info['prev_pos']
+            img_metas[0]['can_bus'][-1] -= self.prev_frame_info['prev_angle']
+        else:
+            img_metas[0]['can_bus'][-1] = 0
+            img_metas[0]['can_bus'][:3] = 0   
+
+        # new_prev_bev, bbox_results = self.simple_export(
+        #     img_metas[0], img[0], prev_bev=self.prev_frame_info['prev_bev'], rescale=True)
+        # # During inference, we save the BEV features and ego motion of each timestamp.
+        # self.prev_frame_info['prev_pos'] = tmp_pos
+        # self.prev_frame_info['prev_angle'] = tmp_angle
+        # self.prev_frame_info['prev_bev'] = new_prev_bev
+        # return bbox_results
+        #mcw
+        out=self.simple_export(
+            img_metas[0], img[0], prev_bev=prev_bev, rescale=True)
+        return out
+
+    def simple_export(self, img_metas, img=None, prev_bev=None, rescale=False):
+        """Test function without augmentaiton."""
+        img_feats = self.extract_feat_export(img=img, img_metas=img_metas) #torch.Size([1, 6, 256, 15, 25])
+
+        # bbox_list = [dict() for i in range(len(img_metas))]
+        # new_prev_bev, bbox_pts = self.simple_test_pts_export(
+        #     img_feats, img_metas, prev_bev, rescale=rescale)
+        # for result_dict, pts_bbox in zip(bbox_list, bbox_pts):
+        #     result_dict['pts_bbox'] = pts_bbox
+        # return new_prev_bev, bbox_list
+        # mcw
+        out = self.pts_bbox_head(img_feats, img_metas, prev_bev=prev_bev,export=True)
+        return out
+    
+    def extract_img_feat_export(self, img, img_metas, len_queue=None):
+        """Extract features of images."""
+        B = img.size(0)
+        if img is not None:
+            
+            # input_shape = img.shape[-2:]
+            # # update real input shape of each single img
+            # for img_meta in img_metas:
+            #     img_meta.update(input_shape=input_shape)
+
+            if img.dim() == 5 and img.size(0) == 1:
+                img.squeeze_()
+            elif img.dim() == 5 and img.size(0) > 1:
+                B, N, C, H, W = img.size()
+                img = img.reshape(B * N, C, H, W)
+            if self.use_grid_mask:
+                img = self.grid_mask(img)
+
+            
+            img_feats = self.img_backbone(img)
+            if isinstance(img_feats, dict):
+                img_feats = list(img_feats.values())
+        else:
+            return None
+        if self.with_img_neck:
+            img_feats = self.img_neck(img_feats)
+
+        img_feats_reshaped = []
+        for img_feat in img_feats:
+            BN, C, H, W = img_feat.size()
+            if len_queue is not None:
+                img_feats_reshaped.append(img_feat.view(int(B/len_queue), len_queue, int(BN / B), C, H, W))
+            else:
+                img_feats_reshaped.append(img_feat.view(B, int(BN / B), C, H, W))
+        return img_feats_reshaped
+
+    @auto_fp16(apply_to=('img'))
+    def extract_feat_export(self, img, img_metas=None, len_queue=None):
+        """Extract features from images and points."""
+
+        img_feats = self.extract_img_feat_export(img, img_metas, len_queue=len_queue)
+        
+        return img_feats
+

@@ -1,0 +1,210 @@
+/media/ava/DATA2/Raj/rajkumar/lib/python3.8/site-packages/mmcv/__init__.py:20: UserWarning: On January 1, 2023, MMCV will release v2.0.0, in which it will remove components related to the training process and add a data transformation module. In addition, it will rename the package names mmcv to mmcv-lite and mmcv-full to mmcv. See https://github.com/open-mmlab/mmcv/blob/master/docs/en/compatibility.md for more details.
+  warnings.warn(
+Config:
+ Config (path: configs/bevformer/bevformer_tiny.py): {'point_cloud_range': [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0], 'class_names': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'], 'dataset_type': 'CustomNuScenesDataset', 'data_root': '/media/ava/DATA2/datasets/BEVFormer/data/nuscenes/', 'input_modality': {'use_lidar': False, 'use_camera': True, 'use_radar': False, 'use_map': False, 'use_external': True}, 'file_client_args': {'backend': 'disk'}, 'train_pipeline': [{'type': 'LoadMultiViewImageFromFiles', 'to_float32': True}, {'type': 'PhotoMetricDistortionMultiViewImage'}, {'type': 'LoadAnnotations3D', 'with_bbox_3d': True, 'with_label_3d': True, 'with_attr_label': False}, {'type': 'ObjectRangeFilter', 'point_cloud_range': [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]}, {'type': 'ObjectNameFilter', 'classes': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']}, {'type': 'NormalizeMultiviewImage', 'mean': [123.675, 116.28, 103.53], 'std': [58.395, 57.12, 57.375], 'to_rgb': True}, {'type': 'RandomScaleImageMultiViewImage', 'scales': [0.5]}, {'type': 'PadMultiViewImage', 'size_divisor': 32}, {'type': 'DefaultFormatBundle3D', 'class_names': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']}, {'type': 'CustomCollect3D', 'keys': ['gt_bboxes_3d', 'gt_labels_3d', 'img']}], 'test_pipeline': [{'type': 'LoadMultiViewImageFromFiles', 'to_float32': True}, {'type': 'NormalizeMultiviewImage', 'mean': [123.675, 116.28, 103.53], 'std': [58.395, 57.12, 57.375], 'to_rgb': True}, {'type': 'MultiScaleFlipAug3D', 'img_scale': (1600, 900), 'pts_scale_ratio': 1, 'flip': False, 'transforms': [{'type': 'RandomScaleImageMultiViewImage', 'scales': [0.5]}, {'type': 'PadMultiViewImage', 'size_divisor': 32}, {'type': 'DefaultFormatBundle3D', 'class_names': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'], 'with_label': False}, {'type': 'CustomCollect3D', 'keys': ['img']}]}], 'eval_pipeline': [{'type': 'LoadPointsFromFile', 'coord_type': 'LIDAR', 'load_dim': 5, 'use_dim': 5, 'file_client_args': {'backend': 'disk'}}, {'type': 'LoadPointsFromMultiSweeps', 'sweeps_num': 10, 'file_client_args': {'backend': 'disk'}}, {'type': 'DefaultFormatBundle3D', 'class_names': ['car', 'truck', 'trailer', 'bus', 'construction_vehicle', 'bicycle', 'motorcycle', 'pedestrian', 'traffic_cone', 'barrier'], 'with_label': False}, {'type': 'Collect3D', 'keys': ['points']}], 'data': {'samples_per_gpu': 1, 'workers_per_gpu': 4, 'train': {'type': 'CustomNuScenesDataset', 'data_root': '/media/ava/DATA2/datasets/BEVFormer/data/nuscenes/', 'ann_file': '/media/ava/DATA2/datasets/BEVFormer/data/nuscenes/nuscenes_infos_temporal_train.pkl', 'pipeline': [{'type': 'LoadMultiViewImageFromFiles', 'to_float32': True}, {'type': 'PhotoMetricDistortionMultiViewImage'}, {'type': 'LoadAnnotations3D', 'with_bbox_3d': True, 'with_label_3d': True, 'with_attr_label': False}, {'type': 'ObjectRangeFilter', 'point_cloud_range': [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]}, {'type': 'ObjectNameFilter', 'classes': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']}, {'type': 'NormalizeMultiviewImage', 'mean': [123.675, 116.28, 103.53], 'std': [58.395, 57.12, 57.375], 'to_rgb': True}, {'type': 'RandomScaleImageMultiViewImage', 'scales': [0.5]}, {'type': 'PadMultiViewImage', 'size_divisor': 32}, {'type': 'DefaultFormatBundle3D', 'class_names': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']}, {'type': 'CustomCollect3D', 'keys': ['gt_bboxes_3d', 'gt_labels_3d', 'img']}], 'classes': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'], 'modality': {'use_lidar': False, 'use_camera': True, 'use_radar': False, 'use_map': False, 'use_external': True}, 'test_mode': False, 'box_type_3d': 'LiDAR', 'use_valid_flag': True, 'bev_size': (50, 50), 'queue_length': 3}, 'val': {'type': 'CustomNuScenesDataset', 'ann_file': '/media/ava/DATA2/datasets/BEVFormer/data/nuscenes/nuscenes_infos_temporal_val.pkl', 'pipeline': [{'type': 'LoadMultiViewImageFromFiles', 'to_float32': True}, {'type': 'NormalizeMultiviewImage', 'mean': [123.675, 116.28, 103.53], 'std': [58.395, 57.12, 57.375], 'to_rgb': True}, {'type': 'MultiScaleFlipAug3D', 'img_scale': (1600, 900), 'pts_scale_ratio': 1, 'flip': False, 'transforms': [{'type': 'RandomScaleImageMultiViewImage', 'scales': [0.5]}, {'type': 'PadMultiViewImage', 'size_divisor': 32}, {'type': 'DefaultFormatBundle3D', 'class_names': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'], 'with_label': False}, {'type': 'CustomCollect3D', 'keys': ['img']}]}], 'classes': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'], 'modality': {'use_lidar': False, 'use_camera': True, 'use_radar': False, 'use_map': False, 'use_external': True}, 'test_mode': True, 'box_type_3d': 'LiDAR', 'data_root': '/media/ava/DATA2/datasets/BEVFormer/data/nuscenes/', 'bev_size': (50, 50), 'samples_per_gpu': 1}, 'test': {'type': 'CustomNuScenesDataset', 'data_root': '/media/ava/DATA2/datasets/BEVFormer/data/nuscenes/', 'ann_file': '/media/ava/DATA2/datasets/BEVFormer/data/nuscenes/nuscenes_infos_temporal_val.pkl', 'pipeline': [{'type': 'LoadMultiViewImageFromFiles', 'to_float32': True}, {'type': 'NormalizeMultiviewImage', 'mean': [123.675, 116.28, 103.53], 'std': [58.395, 57.12, 57.375], 'to_rgb': True}, {'type': 'MultiScaleFlipAug3D', 'img_scale': (1600, 900), 'pts_scale_ratio': 1, 'flip': False, 'transforms': [{'type': 'RandomScaleImageMultiViewImage', 'scales': [0.5]}, {'type': 'PadMultiViewImage', 'size_divisor': 32}, {'type': 'DefaultFormatBundle3D', 'class_names': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'], 'with_label': False}, {'type': 'CustomCollect3D', 'keys': ['img']}]}], 'classes': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'], 'modality': {'use_lidar': False, 'use_camera': True, 'use_radar': False, 'use_map': False, 'use_external': True}, 'test_mode': True, 'box_type_3d': 'LiDAR', 'bev_size': (50, 50)}, 'shuffler_sampler': {'type': 'DistributedGroupSampler'}, 'nonshuffler_sampler': {'type': 'DistributedSampler'}}, 'evaluation': {'interval': 1, 'pipeline': [{'type': 'LoadMultiViewImageFromFiles', 'to_float32': True}, {'type': 'NormalizeMultiviewImage', 'mean': [123.675, 116.28, 103.53], 'std': [58.395, 57.12, 57.375], 'to_rgb': True}, {'type': 'MultiScaleFlipAug3D', 'img_scale': (1600, 900), 'pts_scale_ratio': 1, 'flip': False, 'transforms': [{'type': 'RandomScaleImageMultiViewImage', 'scales': [0.5]}, {'type': 'PadMultiViewImage', 'size_divisor': 32}, {'type': 'DefaultFormatBundle3D', 'class_names': ['car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'], 'with_label': False}, {'type': 'CustomCollect3D', 'keys': ['img']}]}]}, 'checkpoint_config': {'interval': 1}, 'log_config': {'interval': 50, 'hooks': [{'type': 'TextLoggerHook'}, {'type': 'TensorboardLoggerHook'}]}, 'dist_params': {'backend': 'nccl'}, 'log_level': 'INFO', 'work_dir': None, 'load_from': None, 'resume_from': None, 'workflow': [('train', 1)], 'plugin': True, 'plugin_dir': 'projects/mmdet3d_plugin/', 'voxel_size': [0.2, 0.2, 8], 'img_norm_cfg': {'mean': [123.675, 116.28, 103.53], 'std': [58.395, 57.12, 57.375], 'to_rgb': True}, '_dim_': 256, '_pos_dim_': 128, '_ffn_dim_': 512, '_num_levels_': 1, 'bev_h_': 50, 'bev_w_': 50, 'queue_length': 3, 'model': {'type': 'BEVFormer', 'use_grid_mask': True, 'video_test_mode': True, 'pretrained': {'img': 'torchvision://resnet50'}, 'img_backbone': {'type': 'ResNet', 'depth': 50, 'num_stages': 4, 'out_indices': (3,), 'frozen_stages': 1, 'norm_cfg': {'type': 'BN', 'requires_grad': False}, 'norm_eval': True, 'style': 'pytorch'}, 'img_neck': {'type': 'FPN', 'in_channels': [2048], 'out_channels': 256, 'start_level': 0, 'add_extra_convs': 'on_output', 'num_outs': 1, 'relu_before_extra_convs': True}, 'pts_bbox_head': {'type': 'BEVFormerHead', 'bev_h': 50, 'bev_w': 50, 'num_query': 900, 'num_classes': 10, 'in_channels': 256, 'sync_cls_avg_factor': True, 'with_box_refine': True, 'as_two_stage': False, 'transformer': {'type': 'PerceptionTransformer', 'rotate_prev_bev': True, 'use_shift': True, 'use_can_bus': True, 'embed_dims': 256, 'encoder': {'type': 'BEVFormerEncoder', 'num_layers': 3, 'pc_range': [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0], 'num_points_in_pillar': 4, 'return_intermediate': False, 'transformerlayers': {'type': 'BEVFormerLayer', 'attn_cfgs': [{'type': 'TemporalSelfAttention', 'embed_dims': 256, 'num_levels': 1}, {'type': 'SpatialCrossAttention', 'pc_range': [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0], 'deformable_attention': {'type': 'MSDeformableAttention3D', 'embed_dims': 256, 'num_points': 8, 'num_levels': 1}, 'embed_dims': 256}], 'feedforward_channels': 512, 'ffn_dropout': 0.1, 'operation_order': ('self_attn', 'norm', 'cross_attn', 'norm', 'ffn', 'norm')}}, 'decoder': {'type': 'DetectionTransformerDecoder', 'num_layers': 6, 'return_intermediate': True, 'transformerlayers': {'type': 'DetrTransformerDecoderLayer', 'attn_cfgs': [{'type': 'MultiheadAttention', 'embed_dims': 256, 'num_heads': 8, 'dropout': 0.1}, {'type': 'CustomMSDeformableAttention', 'embed_dims': 256, 'num_levels': 1}], 'feedforward_channels': 512, 'ffn_dropout': 0.1, 'operation_order': ('self_attn', 'norm', 'cross_attn', 'norm', 'ffn', 'norm')}}}, 'bbox_coder': {'type': 'NMSFreeCoder', 'post_center_range': [-61.2, -61.2, -10.0, 61.2, 61.2, 10.0], 'pc_range': [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0], 'max_num': 300, 'voxel_size': [0.2, 0.2, 8], 'num_classes': 10}, 'positional_encoding': {'type': 'LearnedPositionalEncoding', 'num_feats': 128, 'row_num_embed': 50, 'col_num_embed': 50}, 'loss_cls': {'type': 'FocalLoss', 'use_sigmoid': True, 'gamma': 2.0, 'alpha': 0.25, 'loss_weight': 2.0}, 'loss_bbox': {'type': 'L1Loss', 'loss_weight': 0.25}, 'loss_iou': {'type': 'GIoULoss', 'loss_weight': 0.0}}, 'train_cfg': {'pts': {'grid_size': [512, 512, 1], 'voxel_size': [0.2, 0.2, 8], 'point_cloud_range': [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0], 'out_size_factor': 4, 'assigner': {'type': 'HungarianAssigner3D', 'cls_cost': {'type': 'FocalLossCost', 'weight': 2.0}, 'reg_cost': {'type': 'BBox3DL1Cost', 'weight': 0.25}, 'iou_cost': {'type': 'IoUCost', 'weight': 0.0}, 'pc_range': [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]}}}}, 'optimizer': {'type': 'AdamW', 'lr': 0.0002, 'paramwise_cfg': {'custom_keys': {'img_backbone': {'lr_mult': 0.1}}}, 'weight_decay': 0.01}, 'optimizer_config': {'grad_clip': {'max_norm': 35, 'norm_type': 2}}, 'lr_config': {'policy': 'CosineAnnealing', 'warmup': 'linear', 'warmup_iters': 500, 'warmup_ratio': 0.3333333333333333, 'min_lr_ratio': 0.001}, 'total_epochs': 24, 'runner': {'type': 'EpochBasedRunner', 'max_epochs': 24}} 
+
+projects.mmdet3d_plugin
+True
+[array([[[-0.9528036 , -0.25083244, -0.25736043, ..., -0.04744371,
+         -1.3464768 ,  0.2655489 ]],
+
+       [[-1.0003011 ,  0.56280977, -0.57707024, ..., -0.06178752,
+         -1.0413736 ,  0.01657342]],
+
+       [[-0.57157034,  0.70536536, -0.84046113, ...,  0.94296974,
+         -1.164972  , -0.6358159 ]],
+
+       ...,
+
+       [[-0.4349643 , -0.4372953 , -1.1089677 , ...,  0.9487969 ,
+          0.02284015,  1.1846665 ]],
+
+       [[-0.15394866, -0.90878737, -0.9368445 , ...,  0.7450208 ,
+         -0.11848088,  0.4492626 ]],
+
+       [[-0.05310623, -0.42787978, -1.7788316 , ...,  0.23185986,
+          0.6897006 ,  1.2988248 ]]], dtype=float32), array([[[[-5.977476  , -6.458725  , -5.8607144 , ..., -3.6056693 ,
+          -0.8593111 , -5.099118  ],
+         [-7.6813955 , -8.035155  , -8.030627  , ..., -5.414216  ,
+          -4.7898135 , -4.22909   ],
+         [-7.3437047 , -7.9868736 , -9.406782  , ..., -7.0825663 ,
+          -4.8167458 , -6.255665  ],
+         ...,
+         [-6.8160496 , -8.108596  , -8.37228   , ..., -4.715312  ,
+          -4.059617  , -5.5555754 ],
+         [-6.999963  , -7.4913645 , -7.2067413 , ..., -4.6902666 ,
+          -4.0228    , -4.569623  ],
+         [-7.270273  , -9.014666  , -8.546612  , ..., -4.5536513 ,
+          -5.5422516 , -6.2860026 ]]],
+
+
+       [[[-5.6150084 , -6.2926807 , -5.9844036 , ..., -4.210886  ,
+          -0.88563204, -5.4241447 ],
+         [-7.4167376 , -7.651434  , -8.193371  , ..., -4.7215314 ,
+          -4.097229  , -4.5977254 ],
+         [-7.3423734 , -7.821575  , -9.514111  , ..., -6.7726665 ,
+          -5.8804917 , -6.147366  ],
+         ...,
+         [-6.664298  , -7.4521146 , -7.903225  , ..., -4.5278826 ,
+          -3.5725632 , -5.616441  ],
+         [-7.066485  , -6.799121  , -7.375543  , ..., -4.336036  ,
+          -3.9203289 , -4.3614974 ],
+         [-7.534789  , -8.245798  , -9.03577   , ..., -4.7834415 ,
+          -5.3981104 , -6.2227545 ]]],
+
+
+       [[[-5.6414394 , -6.344534  , -6.3253274 , ..., -4.331399  ,
+          -0.87219024, -5.2568192 ],
+         [-7.957388  , -8.133347  , -8.37834   , ..., -4.862883  ,
+          -3.9850478 , -4.361873  ],
+         [-8.380736  , -8.130848  , -9.393702  , ..., -6.21389   ,
+          -5.21395   , -5.923073  ],
+         ...,
+         [-6.2163024 , -7.0896673 , -7.9758263 , ..., -4.54234   ,
+          -3.4619577 , -4.8544884 ],
+         [-6.8753366 , -6.9659195 , -6.8757687 , ..., -4.260827  ,
+          -3.674357  , -3.7765121 ],
+         [-7.215566  , -8.217507  , -8.491255  , ..., -4.68439   ,
+          -5.384612  , -5.6329093 ]]],
+
+
+       [[[-4.8108225 , -5.19384   , -5.517332  , ..., -3.7883263 ,
+          -0.91705465, -4.6256404 ],
+         [-7.534152  , -7.928561  , -8.477442  , ..., -4.827222  ,
+          -3.8690927 , -4.5329976 ],
+         [-8.40283   , -8.338639  , -8.55765   , ..., -6.2608366 ,
+          -5.1810994 , -6.1373067 ],
+         ...,
+         [-6.392057  , -7.393545  , -8.163333  , ..., -4.298913  ,
+          -3.423175  , -5.1195226 ],
+         [-6.2096934 , -6.641278  , -7.065078  , ..., -3.8852255 ,
+          -3.5478396 , -4.069398  ],
+         [-6.792051  , -8.221448  , -8.2589    , ..., -4.923502  ,
+          -5.8030663 , -6.1932306 ]]],
+
+
+       [[[-5.0905714 , -5.5125885 , -5.6483603 , ..., -3.604851  ,
+          -0.91132593, -4.4487624 ],
+         [-7.254489  , -7.9862833 , -8.384951  , ..., -4.6622925 ,
+          -3.717986  , -4.853312  ],
+         [-8.327991  , -8.604748  , -9.767717  , ..., -6.1241446 ,
+          -5.8498526 , -6.135552  ],
+         ...,
+         [-6.62299   , -7.762809  , -8.159917  , ..., -4.442332  ,
+          -3.8299446 , -5.502013  ],
+         [-6.4266295 , -6.819863  , -7.198532  , ..., -3.8365378 ,
+          -3.3248422 , -4.2934237 ],
+         [-6.241421  , -8.242767  , -8.519142  , ..., -4.5287595 ,
+          -5.895529  , -6.3799505 ]]],
+
+
+       [[[-5.0164423 , -5.057957  , -5.1226463 , ..., -3.1528459 ,
+          -0.9319663 , -4.147773  ],
+         [-7.2995725 , -7.6678796 , -7.980026  , ..., -4.741194  ,
+          -3.5797417 , -4.648558  ],
+         [-7.8345733 , -7.759431  , -8.652296  , ..., -6.658992  ,
+          -6.026946  , -6.4743385 ],
+         ...,
+         [-6.1673346 , -6.985114  , -7.9082327 , ..., -4.4780226 ,
+          -3.551836  , -5.452124  ],
+         [-6.0415254 , -6.469198  , -7.0224133 , ..., -3.852094  ,
+          -3.4156744 , -4.305902  ],
+         [-5.873183  , -7.288947  , -7.5132647 , ..., -4.269888  ,
+          -5.784389  , -6.5471334 ]]]], dtype=float32), array([[[[ 1.33102913e+01, -4.50430603e+01, -3.78485948e-01, ...,
+           1.44869596e-01, -4.02858574e-03, -2.22364336e-01],
+         [ 1.63381996e+01,  5.09876633e+00, -5.34428120e-01, ...,
+           2.48515382e-01,  2.28313787e-04,  9.67761662e-06],
+         [-1.59723663e+00,  3.36860275e+00, -4.30444837e-01, ...,
+          -9.55919027e-01,  5.04679419e-03,  1.01682973e+00],
+         ...,
+         [ 1.83442955e+01,  1.88393288e+01, -2.94503182e-01, ...,
+          -1.35069797e-02, -1.59346652e+00,  4.16989744e-01],
+         [-2.11531429e+01,  4.71878090e+01, -3.83492559e-01, ...,
+           2.89947037e-02,  7.15002716e-02, -2.33995393e-02],
+         [ 8.58813477e+00,  2.49619293e+00, -1.55466512e-01, ...,
+           1.65881231e-01,  7.53110362e-05, -1.46250308e+00]]],
+
+
+       [[[ 1.36439095e+01, -4.49916420e+01, -3.92156363e-01, ...,
+          -4.13485169e-01, -2.17135507e-03,  1.99186862e-01],
+         [ 1.60054893e+01,  4.46127319e+00, -4.52513874e-01, ...,
+           3.55571181e-01, -8.20158571e-02, -4.25141640e-02],
+         [-1.87181473e+00,  2.97033691e+00, -5.87190986e-01, ...,
+          -2.17733681e-01,  4.26220242e-03, -1.61450953e-06],
+         ...,
+         [ 1.79117928e+01,  1.90167198e+01, -3.22393268e-01, ...,
+           2.91774720e-01, -1.89429855e+00, -1.10071862e+00],
+         [-2.18998051e+01,  4.72581673e+01, -4.30969238e-01, ...,
+          -1.11478135e-01, -9.44213942e-03,  1.97674497e-03],
+         [ 8.89426804e+00,  2.09639359e+00, -2.91573733e-01, ...,
+          -1.14354510e-02, -2.85957661e-02, -9.80283976e-01]]],
+
+
+       [[[ 1.36692848e+01, -4.50355225e+01, -3.72435093e-01, ...,
+           9.53745425e-01, -6.14551501e-03, -7.04611659e-01],
+         [ 1.60902061e+01,  4.92549896e+00, -5.55355489e-01, ...,
+           6.34178594e-02,  2.49785167e-04, -5.67230210e-02],
+         [-2.47889328e+00,  2.69424438e+00, -5.92919052e-01, ...,
+           3.17373455e-01,  2.61569483e-04, -1.40716219e-02],
+         ...,
+         [ 1.77132454e+01,  1.91446114e+01, -3.33189040e-01, ...,
+           5.79472661e-01, -5.53329766e-01, -2.47879767e+00],
+         [-2.20324593e+01,  4.73504753e+01, -6.48648739e-01, ...,
+           3.20964679e-02, -8.93749384e-05,  2.33636238e-02],
+         [ 8.86829376e+00,  2.39266205e+00, -4.01740730e-01, ...,
+          -3.62667173e-01, -2.05061302e-01, -7.89777696e-01]]],
+
+
+       [[[ 1.35938911e+01, -4.50317612e+01, -3.86633575e-01, ...,
+           8.23253512e-01, -2.09605113e-01, -7.12256432e-01],
+         [ 1.61179619e+01,  5.13498688e+00, -4.62941051e-01, ...,
+           3.96708518e-01,  9.67731248e-05, -1.39707550e-01],
+         [-2.79992294e+00,  3.20895386e+00, -5.23396432e-01, ...,
+           1.88792586e-01, -6.34405587e-04,  2.28076093e-02],
+         ...,
+         [ 1.77842293e+01,  1.91580849e+01, -4.15096879e-01, ...,
+           4.93210495e-01,  1.22076057e-01, -1.40556836e+00],
+         [-2.20202084e+01,  4.74224968e+01, -4.69953895e-01, ...,
+           4.76318717e-01,  1.07362510e-04, -1.09682302e-03],
+         [ 9.04027557e+00,  2.51381302e+00, -3.34605336e-01, ...,
+           5.35421014e-01, -1.10191159e-01, -2.29855013e+00]]],
+
+
+       [[[ 1.34918098e+01, -4.50295410e+01, -3.70151997e-01, ...,
+           9.81635094e-01, -5.49790821e-05, -9.03084099e-01],
+         [ 1.62366982e+01,  5.24098969e+00, -4.92455274e-01, ...,
+           7.68648088e-01,  9.16698355e-07,  6.84391853e-06],
+         [-3.21783829e+00,  3.28017426e+00, -5.25868952e-01, ...,
+           8.26471269e-01, -8.63674446e-04, -3.98725460e-05],
+         ...,
+         [ 1.77247200e+01,  1.91767998e+01, -3.51699233e-01, ...,
+           6.63667262e-01, -7.91564047e-01, -7.99182534e-01],
+         [-2.20448437e+01,  4.74311028e+01, -4.57345277e-01, ...,
+           9.10409749e-01,  1.63922831e-02, -3.37726474e-01],
+         [ 9.14974976e+00,  2.47446823e+00, -2.88680643e-01, ...,
+           8.50412726e-01, -1.64731503e-01, -2.80756164e+00]]],
+
+
+       [[[ 1.34473915e+01, -4.50183220e+01, -4.47174668e-01, ...,
+           9.24142718e-01, -3.96116227e-02, -8.28815281e-01],
+         [ 1.62813377e+01,  5.22139359e+00, -4.88571167e-01, ...,
+           4.75844443e-01, -6.32680822e-05, -2.25138865e-05],
+         [-3.22275543e+00,  3.27637482e+00, -5.59908688e-01, ...,
+           8.24180663e-01, -1.55522321e-06, -2.05621109e-05],
+         ...,
+         [ 1.76859398e+01,  1.91498604e+01, -3.20766032e-01, ...,
+           3.28314871e-01, -9.59045112e-01, -5.42870700e-01],
+         [-2.19651680e+01,  4.74409447e+01, -3.89859289e-01, ...,
+           8.26602519e-01,  6.72605680e-03, -5.35158157e-01],
+         [ 9.32299805e+00,  2.50291824e+00, -3.81490350e-01, ...,
+           4.38713431e-01, -2.70789415e-01, -1.50072217e+00]]]],
+      dtype=float32)]
+/media/ava/DATA2/Raj/rajkumar/lib/python3.8/site-packages/torch/distributed/launch.py:178: FutureWarning: The module torch.distributed.launch is deprecated
+and will be removed in future. Use torchrun.
+Note that --use_env is set by default in torchrun.
+If your script expects `--local_rank` argument to be set, please
+change it to read from `os.environ['LOCAL_RANK']` instead. See 
+https://pytorch.org/docs/stable/distributed.html#launch-utility for 
+further instructions
+
+  warnings.warn(
