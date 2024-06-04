@@ -246,13 +246,41 @@ def main():
             inputs['img'] = inputs['img'].numpy()
             inputs['prev_bev'] = inputs['prev_bev'].numpy()
             inputs = {
-                        'onnx::Gather_0': inputs['img'],
+                        'img.1': inputs['img'],
                         'onnx::Gather_1': inputs['prev_bev']
                     }
             output=sess.run(None, inputs)
-            print(output)
+            # print(output)
             break
-            
+    import numpy as np
+    all_bbox_preds=np.load("/media/ava/DATA2/Raj/BEVFormer/all_bbox_preds.npy")
+    all_cls_scores=np.load("/media/ava/DATA2/Raj/BEVFormer/all_cls_scores.npy")
+    bev_embed=np.load("/media/ava/DATA2/Raj/BEVFormer/bev_embed.npy")
+    # Calculate MSE and Cosine Similarity
+    mse = calculate_mse(bev_embed, output[0])
+    cosine_similarity = calculate_cosine_similarity(bev_embed, output[0])
+    print("\nbev_embed:\nmse:",mse,"\ncosine_similarity",cosine_similarity)
+    mse = calculate_mse(all_cls_scores, output[1])
+    cosine_similarity = calculate_cosine_similarity(all_cls_scores, output[1])
+    print("\nall_cls_scores:\nmse:",mse,"\ncosine_similarity",cosine_similarity)
+    mse = calculate_mse(all_bbox_preds, output[2])
+    cosine_similarity = calculate_cosine_similarity(all_bbox_preds, output[2])
+    print("\nall_bbox_preds:\nmse:",mse,"\ncosine_similarity",cosine_similarity)
+
+import numpy as np
+from numpy.linalg import norm
+def calculate_mse(tensor_a, tensor_b):
+    return np.mean((tensor_a - tensor_b) ** 2)
+
+# Cosine Similarity
+def calculate_cosine_similarity(tensor_a, tensor_b):
+    # Flatten the tensors to 1D
+    tensor_a_flat = tensor_a.flatten()
+    tensor_b_flat = tensor_b.flatten()
+    
+    # Compute the cosine similarity
+    cosine_sim = np.dot(tensor_a_flat, tensor_b_flat) / (norm(tensor_a_flat) * norm(tensor_b_flat))
+    return cosine_sim
 
 
 

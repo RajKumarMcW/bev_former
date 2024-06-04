@@ -291,6 +291,12 @@ class BEVFormerEncoder(TransformerLayerSequence):
             hybird_ref_2d = torch.stack([ref_2d, ref_2d], 1).reshape(
                 bs*2, len_bev, num_bev_level, 2)
 
+        # from einops import rearrange
+        # bev_query = rearrange(bev_query, 'n (h w) d -> n h w d', h=50)
+        # bev_pos = rearrange(bev_pos, 'n (h w) d -> n h w d',h=50)
+        # if prev_bev is not None:
+        #     prev_bev = rearrange(prev_bev, 'n (h w) d -> n h w d', h=50)
+
         # if export:
         #     for lid, layer in enumerate(self.layers):
         #         output = layer(

@@ -53,6 +53,9 @@ class SpatialCrossAttention(BaseModule):
                      type='MSDeformableAttention3D',
                      embed_dims=256,
                      num_levels=4),
+                #  global_attention=dict(
+                #      type='GlobalCrossAttention',
+                #      dim=256),
                  **kwargs
                  ):
         super(SpatialCrossAttention, self).__init__(init_cfg)
@@ -62,10 +65,8 @@ class SpatialCrossAttention(BaseModule):
         self.pc_range = pc_range
         self.fp16_enabled = False
         self.deformable_attention = build_attention(deformable_attention)
-        #mcw
-        # self.global_attention= build_attention(dict(
-        #              type='GlobalCrossAttention',
-        #              dim=256))
+        # mcw
+        # self.global_attention= build_attention(global_attention)
         self.embed_dims = embed_dims
         self.num_cams = num_cams
         self.output_proj = nn.Linear(embed_dims, embed_dims)
@@ -76,108 +77,6 @@ class SpatialCrossAttention(BaseModule):
         """Default initialization for Parameters of Module."""
         xavier_init(self.output_proj, distribution='uniform', bias=0.)
     
-    # @force_fp32(apply_to=('query', 'key', 'value', 'query_pos', 'reference_points_cam'))
-    # def forward(self,
-    #             query,
-    #             key,
-    #             value,
-    #             residual=None,
-    #             query_pos=None,
-    #             key_padding_mask=None,
-    #             reference_points=None,
-    #             spatial_shapes=None,
-    #             reference_points_cam=None,
-    #             bev_mask=None,
-    #             level_start_index=None,
-    #             flag='encoder',
-    #             **kwargs):
-    #     """Forward Function of Detr3DCrossAtten.
-    #     Args:
-    #         query (Tensor): Query of Transformer with shape
-    #             (num_query, bs, embed_dims).
-    #         key (Tensor): The key tensor with shape
-    #             `(num_key, bs, embed_dims)`.
-    #         value (Tensor): The value tensor with shape
-    #             `(num_key, bs, embed_dims)`. (B, N, C, H, W)
-    #         residual (Tensor): The tensor used for addition, with the
-    #             same shape as `x`. Default None. If None, `x` will be used.
-    #         query_pos (Tensor): The positional encoding for `query`.
-    #             Default: None.
-    #         key_pos (Tensor): The positional encoding for  `key`. Default
-    #             None.
-    #         reference_points (Tensor):  The normalized reference
-    #             points with shape (bs, num_query, 4),
-    #             all elements is range in [0, 1], top-left (0,0),
-    #             bottom-right (1, 1), including padding area.
-    #             or (N, Length_{query}, num_levels, 4), add
-    #             additional two dimensions is (w, h) to
-    #             form reference boxes.
-    #         key_padding_mask (Tensor): ByteTensor for `query`, with
-    #             shape [bs, num_key].
-    #         spatial_shapes (Tensor): Spatial shape of features in
-    #             different level. With shape  (num_levels, 2),
-    #             last dimension represent (h, w).
-    #         level_start_index (Tensor): The start index of each level.
-    #             A tensor has shape (num_levels) and can be represented
-    #             as [0, h_0*w_0, h_0*w_0+h_1*w_1, ...].
-    #     Returns:
-    #          Tensor: forwarded results with shape [num_query, bs, embed_dims].
-    #     """
-
-    #     if key is None:
-    #         key = query
-    #     if value is None:
-    #         value = key
-
-    #     if residual is None:
-    #         inp_residual = query
-    #         slots = torch.zeros_like(query)
-    #     if query_pos is not None:
-    #         query = query + query_pos
-
-    #     bs, num_query, _ = query.size()
-
-    #     D = reference_points_cam.size(3)
-    #     indexes = []
-    #     for i, mask_per_img in enumerate(bev_mask):
-    #         index_query_per_img = mask_per_img[0].sum(-1).nonzero().squeeze(-1)
-    #         indexes.append(index_query_per_img)
-    #     max_len = max([len(each) for each in indexes])
-
-    #     # each camera only interacts with its corresponding BEV queries. This step can  greatly save GPU memory.
-    #     queries_rebatch = query.new_zeros(
-    #         [bs, self.num_cams, max_len, self.embed_dims])
-    #     reference_points_rebatch = reference_points_cam.new_zeros(
-    #         [bs, self.num_cams, max_len, D, 2])
-        
-    #     for j in range(bs):
-    #         for i, reference_points_per_img in enumerate(reference_points_cam):   
-    #             index_query_per_img = indexes[i]
-    #             queries_rebatch[j, i, :len(index_query_per_img)] = query[j, index_query_per_img]
-    #             reference_points_rebatch[j, i, :len(index_query_per_img)] = reference_points_per_img[j, index_query_per_img]
-
-    #     num_cams, l, bs, embed_dims = key.shape
-
-    #     key = key.permute(2, 0, 1, 3).reshape(
-    #         bs * self.num_cams, l, self.embed_dims)
-    #     value = value.permute(2, 0, 1, 3).reshape(
-    #         bs * self.num_cams, l, self.embed_dims)
-
-    #     queries = self.deformable_attention(query=queries_rebatch.view(bs*self.num_cams, max_len, self.embed_dims), key=key, value=value,
-    #                                         reference_points=reference_points_rebatch.view(bs*self.num_cams, max_len, D, 2), spatial_shapes=spatial_shapes,
-    #                                         level_start_index=level_start_index).view(bs, self.num_cams, max_len, self.embed_dims)
-    #     for j in range(bs):
-    #         for i, index_query_per_img in enumerate(indexes):
-    #             slots[j, index_query_per_img] += queries[j, i, :len(index_query_per_img)]
-
-    #     count = bev_mask.sum(-1) > 0
-    #     count = count.permute(1, 2, 0).sum(-1)
-    #     count = torch.clamp(count, min=1.0)
-    #     slots = slots / count[..., None]
-    #     slots = self.output_proj(slots)
-    #     return self.dropout(slots) + inp_residual
-    
-    #mcw
     @force_fp32(apply_to=('query', 'key', 'value', 'query_pos', 'reference_points_cam'))
     def forward(self,
                 query,
@@ -225,7 +124,6 @@ class SpatialCrossAttention(BaseModule):
         Returns:
              Tensor: forwarded results with shape [num_query, bs, embed_dims].
         """
-        # print("@@@",query.shape,key.shape,value.shape) #torch.Size([1, 2500, 256]) torch.Size([6, 375, 1, 256]) torch.Size([6, 375, 1, 256])
 
         if key is None:
             key = query
@@ -269,8 +167,6 @@ class SpatialCrossAttention(BaseModule):
         queries = self.deformable_attention(query=queries_rebatch.view(bs*self.num_cams, max_len, self.embed_dims), key=key, value=value,
                                             reference_points=reference_points_rebatch.view(bs*self.num_cams, max_len, D, 2), spatial_shapes=spatial_shapes,
                                             level_start_index=level_start_index).view(bs, self.num_cams, max_len, self.embed_dims)
-        # queries =self.global_attention(query,key,value)
-        # print(len(indexes),slots.shape,queries.shape)
         for j in range(bs):
             for i, index_query_per_img in enumerate(indexes):
                 slots[j, index_query_per_img] += queries[j, i, :len(index_query_per_img)]
@@ -280,10 +176,130 @@ class SpatialCrossAttention(BaseModule):
         count = torch.clamp(count, min=1.0)
         slots = slots / count[..., None]
         slots = self.output_proj(slots)
-        #[1,2500,256]
-        # print("$$",slots.shape)
-        # exit()
         return self.dropout(slots) + inp_residual
+    
+    #mcw
+    # @force_fp32(apply_to=('query', 'key', 'value', 'query_pos', 'reference_points_cam'))
+    # def forward(self,
+    #             query,
+    #             key,
+    #             value,
+    #             residual=None,
+    #             query_pos=None,
+    #             key_padding_mask=None,
+    #             reference_points=None,
+    #             spatial_shapes=None,
+    #             reference_points_cam=None,
+    #             bev_mask=None,
+    #             level_start_index=None,
+    #             flag='encoder',
+    #             **kwargs):
+    #     """Forward Function of Detr3DCrossAtten.
+    #     Args:
+    #         query (Tensor): Query of Transformer with shape
+    #             (num_query, bs, embed_dims).
+    #         key (Tensor): The key tensor with shape
+    #             `(num_key, bs, embed_dims)`.
+    #         value (Tensor): The value tensor with shape
+    #             `(num_key, bs, embed_dims)`. (B, N, C, H, W)
+    #         residual (Tensor): The tensor used for addition, with the
+    #             same shape as `x`. Default None. If None, `x` will be used.
+    #         query_pos (Tensor): The positional encoding for `query`.
+    #             Default: None.
+    #         key_pos (Tensor): The positional encoding for  `key`. Default
+    #             None.
+    #         reference_points (Tensor):  The normalized reference
+    #             points with shape (bs, num_query, 4),
+    #             all elements is range in [0, 1], top-left (0,0),
+    #             bottom-right (1, 1), including padding area.
+    #             or (N, Length_{query}, num_levels, 4), add
+    #             additional two dimensions is (w, h) to
+    #             form reference boxes.
+    #         key_padding_mask (Tensor): ByteTensor for `query`, with
+    #             shape [bs, num_key].
+    #         spatial_shapes (Tensor): Spatial shape of features in
+    #             different level. With shape  (num_levels, 2),
+    #             last dimension represent (h, w).
+    #         level_start_index (Tensor): The start index of each level.
+    #             A tensor has shape (num_levels) and can be represented
+    #             as [0, h_0*w_0, h_0*w_0+h_1*w_1, ...].
+    #     Returns:
+    #          Tensor: forwarded results with shape [num_query, bs, embed_dims].
+    #     """
+    #     # print("@@@",query.shape,key.shape,value.shape) #torch.Size([1, 2500, 256]) torch.Size([6, 375, 1, 256]) torch.Size([6, 375, 1, 256])
+    #     # print("@@",query.shape)
+    #     query = query.reshape(1,50,50,256)
+    #     if key is None:
+    #         key = query
+    #     if value is None:
+    #         value = key
+
+    #     if residual is None:
+    #         inp_residual = query
+    #         slots = torch.zeros_like(query)
+    #     if query_pos is not None:
+    #         query = query + query_pos
+
+    #     bs, h,w, _ = query.size()
+
+    #     D = reference_points_cam.size(3)
+    #     indexes = []
+    #     for i, mask_per_img in enumerate(bev_mask):
+    #         # index_query_per_img = mask_per_img[0].sum(-1).nonzero().squeeze(-1)
+    #         index_query_per_img = mask_per_img[0].sum(-1).squeeze(-1)
+    #         # print(index_query_per_img.shape)
+    #         index_query_per_img=index_query_per_img.reshape(50,50)
+    #         indexes.append(index_query_per_img)
+    #     # exit()
+    #     max_len = 2500
+    #     import numpy as np
+    #     max_len=int(np.sqrt(max_len))
+
+    #     # each camera only interacts with its corresponding BEV queries. This step can  greatly save GPU memory.
+    #     queries_rebatch = query.new_zeros(
+    #         [bs, self.num_cams, max_len,max_len, self.embed_dims])
+    #     # reference_points_rebatch = reference_points_cam.new_zeros(
+    #     #     [bs, self.num_cams, max_len,max_len, D, 2])
+        
+        
+    #     for j in range(bs):
+    #         for i, reference_points_per_img in enumerate(reference_points_cam):   
+    #             index_query_per_img = indexes[i]
+    #             # print(index_query_per_img.shape)
+    #             queries_rebatch[j, i, :len(index_query_per_img),:len(index_query_per_img)] = query[j,  index_query_per_img, index_query_per_img]
+    #             # reference_points_rebatch[j, i, :len(index_query_per_img),:len(index_query_per_img)] = reference_points_per_img[j, index_query_per_img,index_query_per_img]
+
+    #     num_cams, l, bs, embed_dims = key.shape
+    #     H=15
+    #     W=25
+    #     key = key.permute(2, 0,  3,1).reshape(
+    #         bs * self.num_cams, self.embed_dims, H,W)
+    #     value = value.permute(2, 0,3,1).reshape(
+    #         bs * self.num_cams, self.embed_dims, H,W)
+    #     # queries = self.deformable_attention(query=queries_rebatch.view(bs*self.num_cams, max_len, self.embed_dims), key=key, value=value,
+    #     #                                     reference_points=reference_points_rebatch.view(bs*self.num_cams, max_len, D, 2), spatial_shapes=spatial_shapes,
+    #     #                                     level_start_index=level_start_index).view(bs, self.num_cams, max_len, self.embed_dims)
+    #     queries =self.global_attention(queries_rebatch,key,value)
+    #     # queries=queries.reshape(6,900,256)
+    #     # print("@@",queries)
+    #     # exit()
+    #     # print(len(indexes),slots.shape,queries.shape)
+    #     for j in range(bs):
+    #         for i, index_query_per_img in enumerate(indexes):
+    #             slots[j, index_query_per_img, index_query_per_img] += queries[ i, :len(index_query_per_img), :len(index_query_per_img)]
+
+    #     # print("@@",slots.shape)
+    #     slots=slots.reshape(1,2500,256)
+    #     count = bev_mask.sum(-1) > 0
+    #     count = count.permute(1, 2, 0).sum(-1)
+    #     count = torch.clamp(count, min=1.0)
+    #     slots = slots / count[..., None]
+    #     slots = self.output_proj(slots)
+    #     #[1,2500,256]
+    #     # print("$$",slots.shape)
+    #     # exit()
+    #     inp_residual=inp_residual.reshape(1,2500,256)
+    #     return self.dropout(slots) + inp_residual
 
 #mcw    
 @ATTENTION.register_module()
@@ -296,62 +312,64 @@ class GlobalCrossAttention(BaseModule):
         self.heads = heads
         self.dim_head = dim_head
 
-        self.to_q =  nn.Linear(dim, heads * dim_head, bias=qkv_bias)
-        self.to_k =  nn.Linear(dim, heads * dim_head, bias=qkv_bias)
-        self.to_v =  nn.Linear(dim, heads * dim_head, bias=qkv_bias)
+        self.to_q = nn.Sequential(norm(dim), nn.Linear(
+            dim, heads * dim_head, bias=qkv_bias))
+        self.to_k = nn.Sequential(norm(dim), nn.Linear(
+            dim, heads * dim_head, bias=qkv_bias))
+        self.to_v = nn.Sequential(norm(dim), nn.Linear(
+            dim, heads * dim_head, bias=qkv_bias))
 
         self.proj = nn.Linear(heads * dim_head, dim)
         self.prenorm = norm(dim)
-        self.mlp = nn.Sequential(nn.Linear(dim, 2 * dim), nn.GELU(), nn.Linear(2 * dim, dim))
+        self.mlp = nn.Sequential(
+            nn.Linear(dim, 2 * dim), nn.GELU(), nn.Linear(2 * dim, dim))
         self.postnorm = norm(dim)
 
-    def forward(self, q, k, v, skip=None):
+    def forward(self, q, k, v, skip=None, mask=None):
         """
-        q: (b n d H W)  #[1, 2500, 256]  #[6,604,256]
-        k: (b n d h w)  # [6,375,256]
-        v: (b n d h w)  # [6,375,256]
+        q: (b n d H W)
+        k: (b n k g d)
+        v: (b n k g d)
+        mask: (b n k 1)
         """
         from einops import rearrange
-
+        q = rearrange(q, 'b n H W d -> b n d H W')
+        k = rearrange(k, 'n d h w -> 1 n h w d')
+        v = rearrange(v, 'n d h w -> 1 n h w d')
+        print(q.shape,k.shape,v.shape)
+        
+        _, _, _, H, W = q.shape
+        num_points = k.shape[-2]
         # Move feature dim to last for multi-head proj
-        # q = rearrange(q, 'b n h d -> b n (H W) d')
-        q = q.expand(6, -1, -1)
-        q = self.prenorm(q)
-        k = rearrange(k, 'bn (h w) c -> bn h w c',h=15,w=25)  
-        k = self.prenorm(k)
-        v = rearrange(v, 'bn (h w) c -> bn h w c',h=15,w=25)  
-        v = self.prenorm(v)
-
-        # Rearranging to (bn c h w)
-        q = rearrange(q, 'b (h w) c -> b h w c',h=50,w=50)
-        # k = rearrange(k, 'bn h w c -> bn c h w')
-        # v = rearrange(v, 'bn h w c -> bn c h w')
+        # (b, n, k, d)
+        q = rearrange(q, 'b n d H W -> b n (H W) d')
 
         # Project with multiple heads
-        q = self.to_q(q)                                # b (n H W) (heads dim_head)
-        k = self.to_k(k)                                # b (n h w) (heads dim_head)
-        v = self.to_v(v)                                # b (n h w) (heads dim_head)
+        q = self.to_q(q)
+        k = self.to_k(k)
+        v = self.to_v(v)
 
         # Group the head dim with batch dim
-        
-        q = rearrange(q, 'b ... (m d) -> (b m) ... d', m=self.heads, d=self.dim_head)
-        k = rearrange(k, 'b ... (m d) -> (b m) ... d', m=self.heads, d=self.dim_head)
-        v = rearrange(v, 'b ... (m d) -> (b m) ... d', m=self.heads, d=self.dim_head)
-        # k =  k.reshape(k.shape[0]*self.heads, self.dim_head, -1)
-        # k = k.unsqueeze(1)
-        q = q.view(24, 2500, 12)
+        q = rearrange(q, 'b n q (m d) -> (b m) n q 1 d',
+                      m=self.heads, d=self.dim_head)
+        k = rearrange(k, 'b n q g (m d) -> (b m) n q g d',
+                      m=self.heads, d=self.dim_head)
+        v = rearrange(v, 'b n q g (m d) -> (b m) q (n g) d',
+                      m=self.heads, d=self.dim_head)
 
-        # Reshape key and value tensors to [6, 375, 256]
-        k = k.view(24, 375, 12).permute(0,2,1)
-        v = v.view(24, 375, 12)
-        # print(q.shape,k.shape,v.shape)
-        
-        dot = torch.matmul(self.scale *q, k)
-        att = dot.softmax(dim=-1)
-        # print(att.shape)
-        # Combine values (image level features).
-        a = torch.einsum('b Q K, b K d -> b Q d', att, v)
-        a = rearrange(a, '(b m) ... d -> b ... (m d)', m=self.heads, d=self.dim_head)
+        # Dot product attention along cameras
+        dot = self.scale * \
+            torch.einsum('b n Q c d, b n Q K d -> b n Q c K', q, k)
+        dot = rearrange(dot, 'b n Q c K -> b Q (n c K)')
+        if mask is not None:
+            mask = mask.unsqueeze(1).repeat(1, self.heads, 1, 1, num_points)
+            mask = rearrange(mask, 'b h n Q g -> (b h) Q (n g)')
+            dot[~mask] = -10**9
+        att = dot.to(q).softmax(dim=-1)
+        a = torch.einsum('b Q K, b Q K d -> b Q d', att, v)
+
+        a = rearrange(a, '(b m) Q d -> b Q (m d)',
+                      m=self.heads, d=self.dim_head)
 
         # Combine multiple heads
         z = self.proj(a)
@@ -363,9 +381,82 @@ class GlobalCrossAttention(BaseModule):
         z = self.prenorm(z)
         z = z + self.mlp(z)
         z = self.postnorm(z)
-        # print("@@@",z.shape)
+        z = rearrange(z, 'b (H W) d -> b d H W', H=H, W=W)
+        print(z.shape)
+        exit()
 
         return z
+    # def __init__(self, dim, heads=4, dim_head=12, qkv_bias=False, norm=nn.LayerNorm):
+    #     super().__init__()
+
+    #     self.scale = dim_head ** -0.5
+
+    #     self.heads = heads
+    #     self.dim_head = dim_head
+
+    #     self.to_q =  nn.Linear(dim, heads * dim_head, bias=qkv_bias)
+    #     self.to_k =  nn.Linear(dim, heads * dim_head, bias=qkv_bias)
+    #     self.to_v =  nn.Linear(dim, heads * dim_head, bias=qkv_bias)
+
+    #     self.proj = nn.Linear(heads * dim_head, dim)
+    #     self.prenorm = norm(dim)
+    #     self.mlp = nn.Sequential(nn.Linear(dim, 2 * dim), nn.GELU(), nn.Linear(2 * dim, dim))
+    #     self.postnorm = norm(dim)
+
+    # def forward(self, q, k, v, skip=None):
+    #     """
+    #     q: (b n d H W)  #[1, 2500, 256]  #[6,604,256]
+    #     k: (b n d h w)  # [6,375,256]
+    #     v: (b n d h w)  # [6,375,256]
+    #     """
+    #     from einops import rearrange
+
+    #     # print(q.shape,k.shape) torch.Size([1, 50, 50, 256]) torch.Size([6, 256, 15, 25])
+    #     # exit()
+    #     q = self.prenorm(q)
+ 
+    #     k = rearrange(k, 'n c h w -> n h w c')
+    #     k = self.prenorm(k)
+
+    #     v = rearrange(v, 'n c h w -> n h w c')
+    #     v = self.prenorm(v)
+
+    #     # Project with multiple heads
+    #     q = self.to_q(q)                                # b (n H W) (heads dim_head)
+    #     k = self.to_k(k)                                # b (n h w) (heads dim_head)
+    #     v = self.to_v(v)                                # b (n h w) (heads dim_head)
+
+    #     q = rearrange(q, 'b n h w c ->(b n) h w c')
+    #     k = rearrange(k, 'n h w c -> n c h w')
+    #     v = rearrange(v, 'n h w c -> n c h w')
+
+
+    #     q = q.reshape(q.shape[0]*self.heads,q.shape[1], q.shape[2],self.dim_head)
+        
+    #     k =  k.reshape(k.shape[0]*self.heads, self.dim_head, -1)
+    #     k = k.unsqueeze(1)
+
+    #     v =  v.reshape(v.shape[0]*self.heads, self.dim_head, -1)
+    #     v = v.permute(0, 2, 1).unsqueeze(1) 
+
+       
+    #     dot = torch.matmul(self.scale * q, k)
+
+    #     att = dot.softmax(dim=-1) 
+
+    #     a = torch.matmul(att, v)
+    #     a = rearrange(a, '(b m) ... d -> b ... (m d)', m=self.heads)
+        
+        
+    #     z = self.proj(a)
+        
+    #     # Optional skip connection
+    #     if skip is not None:
+    #         z = z + rearrange(skip, 'b d H W -> b (H W) d')
+
+    #     z = self.postnorm(z)
+
+    #     return z
     
     # def __init__(self, dim, heads=4, dim_head=12, qkv_bias=False, norm=nn.LayerNorm):
     #     super().__init__()

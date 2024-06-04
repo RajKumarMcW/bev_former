@@ -173,7 +173,7 @@ class PerceptionTransformer(BaseModule):
             if self.rotate_prev_bev:
                 for i in range(bs):
                     # num_prev_bev = prev_bev.size(1)
-                    rotation_angle = kwargs['img_metas'][i]['can_bus'][-1]
+                    rotation_angle = kwargs['img_metas'][i]['can_bus'][-1].item()
                     tmp_prev_bev = prev_bev[:, i].reshape(
                         bev_h, bev_w, -1).permute(2, 0, 1)
                     tmp_prev_bev = rotate(tmp_prev_bev, rotation_angle,
@@ -272,8 +272,7 @@ class PerceptionTransformer(BaseModule):
         # shift_x = shift_x * self.use_shift
         # shift = bev_queries.new_tensor(
         #     [shift_x, shift_y]).permute(1, 0)  # xy, bs -> bs, xy
-        # mcw
-        kwargs['img_metas']=[kwargs['img_metas']]
+        # mcw        
         delta_x = np.array([each['can_bus'][0].cpu().numpy()
                            for each in kwargs['img_metas']])
         delta_x = torch.from_numpy(delta_x)
@@ -419,6 +418,7 @@ class PerceptionTransformer(BaseModule):
                     be returned when `as_two_stage` is True, \
                     otherwise None.
         """
+        #bev_queries are same,mlvl_feats differs slightly
         #mcw
         if export:
             bev_embed = self.get_bev_features_export(
@@ -441,7 +441,7 @@ class PerceptionTransformer(BaseModule):
                 bev_pos=bev_pos,
                 prev_bev=prev_bev,
                 **kwargs) 
-
+        
         bs = mlvl_feats[0].size(0)
         query_pos, query = torch.split(
             object_query_embed, self.embed_dims, dim=1)

@@ -228,32 +228,33 @@ def main():
 
     from functools import partial
     model=model.cpu()
-    model.forward = partial(model.forward_export)
+    # model.forward = partial(model.forward_export)
     model.eval()
     for i, data in enumerate(data_loader):
         with torch.no_grad():
             inputs = {} 
             inputs['img'] = data['img'][0].data[0].float().unsqueeze(0)
             torch.manual_seed(42)
-            prev_bev = torch.randn(2500, 1, 256)
-            out=model(inputs['img'],prev_bev)
-            print(out)
-            for key,array in out.items():
-                np.save(f"{key}.npy", array)
-            # torch.onnx.export(
-            #     model, 
-            #     (inputs['img'],prev_bev), 
-            #     "bevformer.onnx", 
-            #     export_params=True, 
-            #     verbose=True,
-            #     opset_version=16,
-            # )
+            inputs['prev_bev'] = torch.randn(2500, 1, 256)
+            # print(inputs['img'])
+            # exit()
+            # out=model(inputs['img'],inputs['prev_bev'])
+            # print(out)
+            # for key,array in out.items():
+            #     np.save(f"{key}.npy", array)
+            torch.onnx.export(
+                model, 
+                (inputs['img'],inputs['prev_bev']), 
+                "bevformer.onnx", 
+                export_params=True, 
+                verbose=True,
+                opset_version=16,
+            )
             break
     import onnx
     check_model = onnx.load("bevformer.onnx")
     onnx.checker.check_model(check_model)
     print("Checked")
-    # onnx.sim
     print("Export Successfully...")
 
 

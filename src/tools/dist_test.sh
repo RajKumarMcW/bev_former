@@ -5,7 +5,7 @@ CHECKPOINT=$2
 GPUS=$3
 EXPORT=$4
 PORT1=${PORT:-29513}
-PORT2=${PORT:-29223}
+PORT2=${PORT:-29224}
 
 if [ "$EXPORT" = "true" ]; then
     PYTHONPATH="$(dirname $0)/..":$PYTHONPATH \
