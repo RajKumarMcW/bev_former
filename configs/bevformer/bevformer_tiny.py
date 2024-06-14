@@ -50,6 +50,7 @@ queue_length = 3 # each sequence contains `queue_length` frames.
 model = dict(
     type='BEVFormer',
     export = False,
+    ort=True,
     use_grid_mask=True,
     video_test_mode=True,
     pretrained=dict(img='torchvision://resnet50'),
@@ -174,8 +175,8 @@ model = dict(
             pc_range=point_cloud_range))))
 
 dataset_type = 'CustomNuScenesDataset'
-# data_root = 'data/nuscenes/'
-data_root = './data/nuscenes/'
+data_root = '/media/ava/DATA2/datasets/BEVFormer/data/nuscenes/'
+# data_root = './data/nuscenes/'
 file_client_args = dict(backend='disk')
 
 

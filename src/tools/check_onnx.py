@@ -227,14 +227,8 @@ def main():
     #     model.PALETTE = dataset.PALETTE
 
     import onnxruntime as ort
-    from onnxsim import simplify
     import onnx
 
-    # model = onnx.load("/media/ava/DATA2/Raj/BEVFormer/bevformer.onnx")
-    # model_simplified, check = simplify(model)
-    # onnx.save(model_simplified, 'simplified_model.onnx')
-
-    # print(check)
 
     sess=ort.InferenceSession("simplified_model.onnx")
     for i, data in enumerate(data_loader):

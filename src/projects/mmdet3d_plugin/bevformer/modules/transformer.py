@@ -173,11 +173,12 @@ class PerceptionTransformer(BaseModule):
             if self.rotate_prev_bev:
                 for i in range(bs):
                     # num_prev_bev = prev_bev.size(1)
-                    rotation_angle = kwargs['img_metas'][i]['can_bus'][-1].item()
+                    rotation_angle = kwargs['img_metas'][i]['can_bus'][-1]
                     tmp_prev_bev = prev_bev[:, i].reshape(
                         bev_h, bev_w, -1).permute(2, 0, 1)
-                    tmp_prev_bev = rotate(tmp_prev_bev, rotation_angle,
-                                          center=self.rotate_center)
+                    tmp_prev_bev = rot_img(tmp_prev_bev.cpu(),torch.tensor(rotation_angle),
+                                          center=self.rotate_center).cuda()
+                    # torch.save(tmp_prev_bev, 'tensor2.pt')
                     tmp_prev_bev = tmp_prev_bev.permute(1, 2, 0).reshape(
                         bev_h * bev_w, 1, -1)
                     prev_bev[:, i] = tmp_prev_bev[:, 0]
@@ -273,33 +274,41 @@ class PerceptionTransformer(BaseModule):
         # shift = bev_queries.new_tensor(
         #     [shift_x, shift_y]).permute(1, 0)  # xy, bs -> bs, xy
         # mcw        
-        delta_x = np.array([each['can_bus'][0].cpu().numpy()
-                           for each in kwargs['img_metas']])
-        delta_x = torch.from_numpy(delta_x)
+        delta_x = kwargs['img_metas'][0]['can_bus'][0].unsqueeze(0).float()
         
-        delta_y = np.array([each['can_bus'][1].cpu().numpy()
-                           for each in kwargs['img_metas']])
-        delta_y = torch.from_numpy(delta_y)
+        delta_y = kwargs['img_metas'][0]['can_bus'][1].unsqueeze(0).float()
         
-        ego_angle = np.array(
-            [each['can_bus'][-2] / np.pi * 180 for each in kwargs['img_metas']])
-        ego_angle = torch.from_numpy(ego_angle.astype(np.float32))
+        ego_angle = kwargs['img_metas'][0]['can_bus'][-2].unsqueeze(0).float()/ np.pi * 180
+        # delta_x = np.array([each['can_bus'][0].cpu().numpy()
+        #                    for each in kwargs['img_metas']])
+        # delta_x = torch.from_numpy(delta_x)
+        
+        # delta_y = np.array([each['can_bus'][1].cpu().numpy()
+        #                    for each in kwargs['img_metas']])
+        # delta_y = torch.from_numpy(delta_y)
+        
+        # ego_angle = np.array(
+        #     [each['can_bus'][-2] / np.pi * 180 for each in kwargs['img_metas']])
+        # ego_angle = torch.from_numpy(ego_angle.astype(np.float32))
         
         grid_length_y = grid_length[0]
         grid_length_x = grid_length[1]
         translation_length = torch.sqrt(delta_x ** 2 + delta_y ** 2)
         
-        translation_angle = torch.atan(delta_y / (delta_x + 1e-6)) / np.pi * 180 ##need change
-        
+        # translation_angle = torch.atan(delta_y / (delta_x + 1e-6)) / np.pi * 180 ##need change
+        # print(onnx_atan2(delta_y,delta_x))
+        # exit()
+        translation_angle = onnx_atan2(delta_y,delta_x)/ np.pi * 180
+
         bev_angle = ego_angle - translation_angle
         shift_y = translation_length * \
             torch.cos(bev_angle / 180 * np.pi) / grid_length_y / bev_h
         shift_x = translation_length * \
             torch.sin(bev_angle / 180 * np.pi) / grid_length_x / bev_w
-        shift_y = shift_y * self.use_shift
-        shift_x = shift_x * self.use_shift
+        shift_y = shift_y * int(self.use_shift)
+        shift_x = shift_x * int(self.use_shift)
         shift = torch.stack([shift_x, shift_y]).permute(1, 0)  # xy, bs -> bs, xy
-
+       
         if prev_bev is not None:
             if prev_bev.shape[1] == bev_h * bev_w:
                 prev_bev = prev_bev.permute(1, 0, 2)
@@ -307,11 +316,10 @@ class PerceptionTransformer(BaseModule):
                 for i in range(bs):
                     #mcw
                     # rotation_angle = kwargs['img_metas'][i]['can_bus'][-1]
-                    rotation_angle = kwargs['img_metas'][i]['can_bus'][-1].item()
-                    
+                    rotation_angle = kwargs['img_metas'][i]['can_bus'][-1]
                     tmp_prev_bev = prev_bev[:, i].reshape(
                         bev_h, bev_w, -1).permute(2, 0, 1)
-                    tmp_prev_bev = rotate(tmp_prev_bev, rotation_angle,
+                    tmp_prev_bev = rot_img(tmp_prev_bev, rotation_angle,
                                           center=self.rotate_center)
                     tmp_prev_bev = tmp_prev_bev.permute(1, 2, 0).reshape(
                         bev_h * bev_w, 1, -1)
@@ -321,12 +329,12 @@ class PerceptionTransformer(BaseModule):
         # mcw
         # can_bus = bev_queries.new_tensor(
         #     [each['can_bus'] for each in kwargs['img_metas']])  # [:, :]
-        can_bus = bev_queries.new_tensor(
-            [each['can_bus'].cpu().numpy() for each in kwargs['img_metas']])  # [:, :]
+        can_bus =  kwargs['img_metas'][0]['can_bus'].unsqueeze(0).float()
         
         can_bus = self.can_bus_mlp(can_bus)[None, :, :]
         # mcw
-        # bev_queries = bev_queries + can_bus * self.use_can_bus
+        # bug i commented this line previously
+        bev_queries = bev_queries + can_bus * int(self.use_can_bus)
 
         feat_flatten = []
         spatial_shapes = []
@@ -345,6 +353,8 @@ class PerceptionTransformer(BaseModule):
         feat_flatten = torch.cat(feat_flatten, 2)
         spatial_shapes = torch.as_tensor(
             spatial_shapes, dtype=torch.long, device=bev_pos.device)
+        # print(spatial_shapes)
+        # exit()
         level_start_index = torch.cat((spatial_shapes.new_zeros(
             (1,)), spatial_shapes.prod(1).cumsum(0)[:-1]))
 
@@ -418,7 +428,7 @@ class PerceptionTransformer(BaseModule):
                     be returned when `as_two_stage` is True, \
                     otherwise None.
         """
-        #bev_queries are same,mlvl_feats differs slightly
+        #all params are same,mlvl_feats differs slightly
         #mcw
         if export:
             bev_embed = self.get_bev_features_export(
@@ -472,3 +482,187 @@ class PerceptionTransformer(BaseModule):
         #     return bev_embed
         # else:
         return bev_embed, inter_states, init_reference_out, inter_references_out
+
+import torch.nn.functional as F
+def _gen_affine_grid(
+    theta,
+    w: int,
+    h: int,
+    ow: int,
+    oh: int,
+):
+    d = 0.5
+    base_grid = torch.empty(1, oh, ow, 3, dtype=theta.dtype, device=theta.device)
+    x_grid = torch.linspace(-ow * 0.5 + d, ow * 0.5 + d - 1, steps=ow, device=theta.device)
+    base_grid[..., 0].copy_(x_grid)
+    y_grid = torch.linspace(-oh * 0.5 + d, oh * 0.5 + d - 1, steps=oh, device=theta.device).unsqueeze_(-1)
+    base_grid[..., 1].copy_(y_grid)
+    base_grid[..., 2].fill_(1)
+
+    rescaled_theta = theta.transpose(1, 2) / torch.tensor([0.5 * w, 0.5 * h], dtype=theta.dtype, device=theta.device)
+    output_grid = base_grid.view(1, oh * ow, 3).bmm(rescaled_theta)
+    return output_grid.view(1, oh, ow, 2)
+
+def get_rot_mat(theta, center):
+    # degree to rad
+    theta=theta * (torch.pi / 180)
+    center = torch.tensor(center, dtype=torch.float32)
+    cos_theta = torch.cos(theta)
+    sin_theta = torch.sin(theta)
+
+
+    # Define the components of the rotation matrix and the translation matrices
+    a = cos_theta
+    b = -sin_theta 
+    f = center[1] * (1 - cos_theta) - center[0] * sin_theta
+    d = sin_theta
+    e = cos_theta
+    c = center[0] * (1 - cos_theta) + center[1] * sin_theta
+
+    transform = torch.stack([a, b, c, d, e, f], dim=-1).reshape( 2, 3)
+    
+    return transform
+
+# def rot_img(x, theta, center):
+#     x=x.unsqueeze(0)
+#     center=[75,75]
+#     rot_mat = get_rot_mat(theta, center).unsqueeze(0)
+#     h=x.shape[-2]
+#     w=x.shape[-1]
+#     grid = _gen_affine_grid(rot_mat, w,h,w,h).float() 
+    
+#     x = F.grid_sample(x, grid, mode='nearest', padding_mode='zeros', align_corners=False)
+#     return x.squeeze(0)
+
+def rot_img(img, angle, center = None):
+    center_f = [0.0, 0.0]
+    _, height, width = img.shape
+    # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
+    center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, [width, height])]
+
+    # due to current incherence of rotation angle direction between affine and rotate implementations
+    # we need to set -angle.
+    angle = (-angle) * (torch.pi / 180)
+    shear = torch.Tensor([0.0, 0.0, 0.5])
+    #shear = shear + torch.zeros_like(shear)
+
+    sx = shear[0] * (torch.pi / 180)
+    sy = shear[1] * (torch.pi / 180)
+
+    cx, cy = center_f
+    tx, ty = 0.0, 0.0
+
+    # RSS without scaling
+    a = torch.cos(angle - sy) / torch.cos(sy)
+    b = -torch.cos(angle - sy) * torch.tan(sx) / torch.cos(sy) - torch.sin(angle)
+    c = torch.sin(angle - sy) / torch.cos(sy)
+    d = -torch.sin(angle - sy) * torch.tan(sx) / torch.cos(sy) + torch.cos(angle)
+
+    matrix = torch.stack([d, -b, shear[0], -c, a, shear[0]])
+    
+    # Apply inverse of translation and of center translation: RSS^-1 * C^-1 * T^-1
+    matrix[2] += matrix[0] * (-cx - tx) + matrix[1] * (-cy - ty)
+    matrix[5] += matrix[3] * (-cx - tx) + matrix[4] * (-cy - ty)
+    # Apply center translation: C * RSS^-1 * C^-1 * T^-1
+    matrix[2] += cx
+    matrix[5] += cy
+
+    _, w, h = img.shape
+    theta = matrix.reshape(1, 2, 3)
+
+    d = 0.5
+    base_grid = torch.empty(1, h, w, 3, device=theta.device)
+    # print(base_grid.dtype)
+    # exit()
+    x_grid = torch.linspace(-w * d + 0.5, w * 0.5 + d - 1, steps=w, device=theta.device)
+    base_grid[..., 0] = x_grid.clone()
+    y_grid = torch.linspace(-h * d + 0.5, h * 0.5 + d - 1, steps=h, device=theta.device).unsqueeze_(-1)
+    base_grid[..., 1] = y_grid.clone()
+    base_grid[..., 2] = 1
+
+    rescaled_theta = theta.transpose(1, 2)
+    rescaled_theta = rescaled_theta / torch.stack([shear[2] * w, shear[2] * h])
+    output_grid = base_grid.reshape(1, h * w, 3)
+    # print(output_grid.type,rescaled_theta.dtype)
+    # exit()
+    rescaled_theta = rescaled_theta.to(torch.float32)
+    output_grid = torch.bmm(output_grid, rescaled_theta)
+    grid = output_grid.reshape(1, h, w, 2).cpu()
+
+    img = img.unsqueeze(0).cpu()
+    img = F.grid_sample(img, grid, mode='nearest', padding_mode="zeros", align_corners=False)
+    img = img.squeeze(0)
+    return img
+
+def onnx_atan2(y, x):
+    # Create a pi tensor with the same device and data type as y
+    pi = torch.tensor(torch.pi, device=y.device, dtype=y.dtype)
+    half_pi = pi / 2
+    eps = 1e-6
+
+    # Compute the arctangent of y/x
+    ans = torch.atan(y / (x + eps))
+
+    # Create boolean tensors representing positive, negative, and zero values of y and x
+    y_positive = y > 0
+    y_negative = y < 0
+    x_negative = x < 0
+    x_zero = x == 0
+
+    # Adjust ans based on the positive, negative, and zero values of y and x
+    ans += torch.where(y_positive & x_negative, pi, torch.zeros_like(ans))  # Quadrants I and II
+    ans -= torch.where(y_negative & x_negative, pi, torch.zeros_like(ans))  # Quadrants III and IV
+    ans = torch.where(y_positive & x_zero, half_pi, ans)  # Positive y-axis
+    ans = torch.where(y_negative & x_zero, -half_pi, ans)  # Negative y-axis
+    return ans
+
+# tensor([[[ 0.0000,  0.0000, -0.7628,  ..., -0.5323, -0.8474, -0.6010],
+    #      [ 0.0000,  0.0000, -0.4664,  ..., -0.5534, -0.6080, -0.6340],
+    #      [ 0.0000,  0.0000, -0.8604,  ..., -0.5915, -0.4962, -0.3060],
+    #      ...,
+    #      [ 0.0000, -0.7392, -0.8105,  ..., -0.5234, -0.5965, -0.5049],
+    #      [ 0.0000,  0.0000,  0.0000,  ..., -0.4930, -0.6202, -0.5040],
+    #      [ 0.0000,  0.0000,  0.0000,  ...,  0.0000,  0.0000,  0.0000]],
+
+    #     [[ 0.0000,  0.0000, -0.4977,  ..., -0.8973, -0.5605, -0.7450],
+    #      [ 0.0000,  0.0000, -0.5954,  ..., -0.8324, -0.7523, -0.8194],
+    #      [ 0.0000,  0.0000, -0.6566,  ..., -0.8608, -1.0565, -1.2274],
+    #      ...,
+    #      [ 0.0000, -0.0879, -0.2215,  ..., -0.2054, -0.2033, -0.4365],
+    #      [ 0.0000,  0.0000,  0.0000,  ..., -0.4533, -0.1582, -0.2866],
+    #      [ 0.0000,  0.0000,  0.0000,  ...,  0.0000,  0.0000,  0.0000]],
+
+    #     [[ 0.0000,  0.0000,  0.4172,  ..., -0.1607,  0.0535, -0.3590],
+    #      [ 0.0000,  0.0000,  0.4552,  ..., -0.2134, -0.3188, -0.2886],
+    #      [ 0.0000,  0.0000,  0.6102,  ..., -0.1625, -0.1172, -0.0841],
+    #      ...,
+    #      [ 0.0000, -0.6967, -0.6201,  ..., -0.3091, -0.2765, -0.3370],
+    #      [ 0.0000,  0.0000,  0.0000,  ..., -0.1270, -0.2125, -0.3198],
+    #      [ 0.0000,  0.0000,  0.0000,  ...,  0.0000,  0.0000,  0.0000]],
+
+    #     ...,
+
+    #     [[ 0.0000,  0.0000, -0.2783,  ..., -0.6867, -1.1673, -0.8914],
+    #      [ 0.0000,  0.0000, -0.0766,  ..., -1.0700, -0.7154, -0.7051],
+    #      [ 0.0000,  0.0000, -0.0388,  ..., -0.7061, -0.5695, -0.5225],
+    #      ...,
+    #      [ 0.0000,  0.0541, -0.1252,  ...,  0.1172,  0.2065,  0.2631],
+    #      [ 0.0000,  0.0000,  0.0000,  ..., -0.0804,  0.1573,  0.1422],
+    #      [ 0.0000,  0.0000,  0.0000,  ...,  0.0000,  0.0000,  0.0000]],
+
+    #     [[ 0.0000,  0.0000,  0.6055,  ..., -0.0534, -0.3850, -0.2160],
+    #      [ 0.0000,  0.0000,  0.7553,  ..., -0.1668, -0.2499, -0.6738],
+    #      [ 0.0000,  0.0000,  0.7141,  ..., -0.4392, -0.6560, -0.5873],
+    #      ...,
+    #      [ 0.0000,  0.0396, -0.0667,  ..., -0.1942, -0.1340,  0.0908],
+    #      [ 0.0000,  0.0000,  0.0000,  ..., -0.2631, -0.2656, -0.0232],
+    #      [ 0.0000,  0.0000,  0.0000,  ...,  0.0000,  0.0000,  0.0000]],
+
+    #     [[ 0.0000,  0.0000,  0.5363,  ...,  0.7368,  0.8228,  0.7244],
+    #      [ 0.0000,  0.0000,  0.5724,  ...,  0.7089,  0.5695,  0.7325],
+    #      [ 0.0000,  0.0000,  0.3019,  ...,  0.7797,  0.5898,  0.4279],
+    #      ...,
+    #      [ 0.0000,  0.0395,  0.3710,  ...,  0.1762,  0.1657,  0.2459],
+    #      [ 0.0000,  0.0000,  0.0000,  ...,  0.4071,  0.2153,  0.2379],
+    #      [ 0.0000,  0.0000,  0.0000,  ...,  0.0000,  0.0000,  0.0000]]],
+    #    device='cuda:0')

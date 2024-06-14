@@ -141,9 +141,12 @@ class SpatialCrossAttention(BaseModule):
         D = reference_points_cam.size(3)
         indexes = []
         for i, mask_per_img in enumerate(bev_mask):
-            index_query_per_img = mask_per_img[0].sum(-1).nonzero().squeeze(-1)
+            #mcw
+            # index_query_per_img = mask_per_img[0].sum(-1).nonzero().squeeze(-1)
+            index_query_per_img = torch.topk(mask_per_img[0].sum(-1), 2500, largest=True).indices
+
             indexes.append(index_query_per_img)
-        max_len = max([len(each) for each in indexes])
+        max_len = max([each.shape[0] for each in indexes])
 
         # each camera only interacts with its corresponding BEV queries. This step can  greatly save GPU memory.
         queries_rebatch = query.new_zeros(
@@ -154,8 +157,8 @@ class SpatialCrossAttention(BaseModule):
         for j in range(bs):
             for i, reference_points_per_img in enumerate(reference_points_cam):   
                 index_query_per_img = indexes[i]
-                queries_rebatch[j, i, :len(index_query_per_img)] = query[j, index_query_per_img]
-                reference_points_rebatch[j, i, :len(index_query_per_img)] = reference_points_per_img[j, index_query_per_img]
+                queries_rebatch[j, i, :index_query_per_img.shape[0]] = query[j, index_query_per_img]
+                reference_points_rebatch[j, i, :index_query_per_img.shape[0]] = reference_points_per_img[j, index_query_per_img]
 
         num_cams, l, bs, embed_dims = key.shape
 
@@ -169,7 +172,7 @@ class SpatialCrossAttention(BaseModule):
                                             level_start_index=level_start_index).view(bs, self.num_cams, max_len, self.embed_dims)
         for j in range(bs):
             for i, index_query_per_img in enumerate(indexes):
-                slots[j, index_query_per_img] += queries[j, i, :len(index_query_per_img)]
+                slots[j, index_query_per_img] += queries[j, i, :index_query_per_img.shape[0]]
 
         count = bev_mask.sum(-1) > 0
         count = count.permute(1, 2, 0).sum(-1)
@@ -243,32 +246,40 @@ class SpatialCrossAttention(BaseModule):
     #     bs, h,w, _ = query.size()
 
     #     D = reference_points_cam.size(3)
-    #     indexes = []
-    #     for i, mask_per_img in enumerate(bev_mask):
-    #         # index_query_per_img = mask_per_img[0].sum(-1).nonzero().squeeze(-1)
-    #         index_query_per_img = mask_per_img[0].sum(-1).squeeze(-1)
-    #         # print(index_query_per_img.shape)
-    #         index_query_per_img=index_query_per_img.reshape(50,50)
-    #         indexes.append(index_query_per_img)
-    #     # exit()
-    #     max_len = 2500
+    #     indexes_h = []
+    #     indexes_w = []
+    #     max_len = 400
     #     import numpy as np
-    #     max_len=int(np.sqrt(max_len))
+    #     l=int(np.sqrt(max_len))
+    #     for i, mask_per_img in enumerate(bev_mask):
+    #         index_query_per_img = torch.topk(bev_mask[i, 0].sum(-1), max_len, largest=True).indices
+    #         index_query_per_img_h = torch.div(index_query_per_img,h, rounding_mode='floor')
+    #         index_query_per_img_w = torch.fmod(index_query_per_img,w)
+    #         # print(index_query_per_img,index_query_per_img.shape)
+            
+    #         # print(index_query_per_img.shape)
+    #         indexes_h.append(index_query_per_img_h.reshape(l,l))
+    #         indexes_w.append(index_query_per_img_w.reshape(l,l))
+    #     # exit()
+        
 
     #     # each camera only interacts with its corresponding BEV queries. This step can  greatly save GPU memory.
     #     queries_rebatch = query.new_zeros(
-    #         [bs, self.num_cams, max_len,max_len, self.embed_dims])
+    #         [bs, self.num_cams, l,l, self.embed_dims])
     #     # reference_points_rebatch = reference_points_cam.new_zeros(
     #     #     [bs, self.num_cams, max_len,max_len, D, 2])
         
         
     #     for j in range(bs):
     #         for i, reference_points_per_img in enumerate(reference_points_cam):   
-    #             index_query_per_img = indexes[i]
+    #             index_query_per_img_h = indexes_h[i]
+    #             index_query_per_img_w = indexes_w[i]
     #             # print(index_query_per_img.shape)
-    #             queries_rebatch[j, i, :len(index_query_per_img),:len(index_query_per_img)] = query[j,  index_query_per_img, index_query_per_img]
+                
+    #             queries_rebatch[j, i, :,:,:] = query[j,  index_query_per_img_h, index_query_per_img_w,:]
+                
     #             # reference_points_rebatch[j, i, :len(index_query_per_img),:len(index_query_per_img)] = reference_points_per_img[j, index_query_per_img,index_query_per_img]
-
+    #     # exit()
     #     num_cams, l, bs, embed_dims = key.shape
     #     H=15
     #     W=25
@@ -281,12 +292,13 @@ class SpatialCrossAttention(BaseModule):
     #     #                                     level_start_index=level_start_index).view(bs, self.num_cams, max_len, self.embed_dims)
     #     queries =self.global_attention(queries_rebatch,key,value)
     #     # queries=queries.reshape(6,900,256)
-    #     # print("@@",queries)
+    #     # print("@@",queries.shape)
     #     # exit()
     #     # print(len(indexes),slots.shape,queries.shape)
     #     for j in range(bs):
-    #         for i, index_query_per_img in enumerate(indexes):
-    #             slots[j, index_query_per_img, index_query_per_img] += queries[ i, :len(index_query_per_img), :len(index_query_per_img)]
+    #         for i, index_query_per_img_h in enumerate(indexes_h):
+    #             index_query_per_img_w=indexes_w[i]
+    #             slots[j, index_query_per_img_h, index_query_per_img_w] += queries[ i, :len(index_query_per_img_h), :len(index_query_per_img_w)]
 
     #     # print("@@",slots.shape)
     #     slots=slots.reshape(1,2500,256)
@@ -336,7 +348,7 @@ class GlobalCrossAttention(BaseModule):
         q = rearrange(q, 'b n H W d -> b n d H W')
         k = rearrange(k, 'n d h w -> 1 n h w d')
         v = rearrange(v, 'n d h w -> 1 n h w d')
-        print(q.shape,k.shape,v.shape)
+        # print(q.shape,k.shape,v.shape)
         
         _, _, _, H, W = q.shape
         num_points = k.shape[-2]
@@ -354,21 +366,25 @@ class GlobalCrossAttention(BaseModule):
                       m=self.heads, d=self.dim_head)
         k = rearrange(k, 'b n q g (m d) -> (b m) n q g d',
                       m=self.heads, d=self.dim_head)
-        v = rearrange(v, 'b n q g (m d) -> (b m) q (n g) d',
+        v = rearrange(v, 'b n q g (m d) -> (b m) n (q g) d',
                       m=self.heads, d=self.dim_head)
-
+        
+        #torch.Size([24, 50, 50, 12]) torch.Size([24, 1, 12, 375]) torch.Size([24, 1, 375, 12])
+        # torch.Size([4, 6, 2500, 1, 12]) torch.Size([4, 6, 15, 25, 12]) torch.Size([4, 15, 150, 12])
+        # print(q.shape,k.shape,v.shape)
         # Dot product attention along cameras
         dot = self.scale * \
-            torch.einsum('b n Q c d, b n Q K d -> b n Q c K', q, k)
-        dot = rearrange(dot, 'b n Q c K -> b Q (n c K)')
+            torch.einsum('b n Q c d, b n h w d -> b n Q h w', q, k)
+        dot = rearrange(dot, 'b n Q c K -> b n Q (c K)')
         if mask is not None:
             mask = mask.unsqueeze(1).repeat(1, self.heads, 1, 1, num_points)
             mask = rearrange(mask, 'b h n Q g -> (b h) Q (n g)')
             dot[~mask] = -10**9
         att = dot.to(q).softmax(dim=-1)
-        a = torch.einsum('b Q K, b Q K d -> b Q d', att, v)
+        # print(att.shape)
+        a = torch.einsum('b n Q K, b n K d -> b n Q d', att, v)
 
-        a = rearrange(a, '(b m) Q d -> b Q (m d)',
+        a = rearrange(a, '(b m) n Q d -> (b n) Q (m d)',
                       m=self.heads, d=self.dim_head)
 
         # Combine multiple heads
@@ -381,11 +397,13 @@ class GlobalCrossAttention(BaseModule):
         z = self.prenorm(z)
         z = z + self.mlp(z)
         z = self.postnorm(z)
-        z = rearrange(z, 'b (H W) d -> b d H W', H=H, W=W)
-        print(z.shape)
-        exit()
+        z = rearrange(z, 'n (H W) d -> n H W d', H=H, W=W)
+        # print(z.shape)
+        # exit()
 
         return z
+    
+    
     # def __init__(self, dim, heads=4, dim_head=12, qkv_bias=False, norm=nn.LayerNorm):
     #     super().__init__()
 

@@ -29,8 +29,8 @@ def denormalize_bbox(normalized_bboxes, pc_range):
 
     rot_cosine = normalized_bboxes[..., 7:8]
     # mcw
-    # rot = torch.atan2(rot_sine, rot_cosine)
-    rot = torch.atan(rot_sine / (rot_cosine + 1e-6))
+    rot = torch.atan2(rot_sine, rot_cosine)
+    # rot = torch.atan(rot_sine / (rot_cosine + 1e-6))
 
     # center in the bev
     cx = normalized_bboxes[..., 0:1]

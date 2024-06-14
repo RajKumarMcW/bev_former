@@ -233,18 +233,22 @@ def main():
     for i, data in enumerate(data_loader):
         with torch.no_grad():
             inputs = {} 
-            inputs['img'] = data['img'][0].data[0].float().unsqueeze(0)
+            inputs['img'] = data['img'][0].data[0].float().unsqueeze(0)#.cuda()
             torch.manual_seed(42)
-            inputs['prev_bev'] = torch.randn(2500, 1, 256)
-            # print(inputs['img'])
-            # exit()
-            # out=model(inputs['img'],inputs['prev_bev'])
+            inputs['prev_bev'] = torch.rand(2500, 1, 256)
+            can_bus=data['img_metas'][0].data[0][0]['can_bus']
+            lidar2img=data['img_metas'][0].data[0][0]['lidar2img']
+            lidar2img = torch.tensor(lidar2img).reshape(1,6,4,4)
+            lidar2img = lidar2img[:,:6]#.cuda()
+            can_bus = torch.tensor(can_bus)#.cuda()
+            # out=model(inputs['img'],inputs['prev_bev'],can_bus,lidar2img)
             # print(out)
+            # exit()
             # for key,array in out.items():
             #     np.save(f"{key}.npy", array)
             torch.onnx.export(
                 model, 
-                (inputs['img'],inputs['prev_bev']), 
+                (inputs['img'],inputs['prev_bev'],can_bus,lidar2img), 
                 "bevformer.onnx", 
                 export_params=True, 
                 verbose=True,
@@ -252,9 +256,14 @@ def main():
             )
             break
     import onnx
+    from onnxsim import simplify
     check_model = onnx.load("bevformer.onnx")
     onnx.checker.check_model(check_model)
-    print("Checked")
+    model = onnx.load("/media/ava/DATA2/Raj/BEVFormer/bevformer.onnx")
+    model_simplified, check = simplify(model, check_n=3)
+    assert check, 'assert check failed'
+    onnx.save(model_simplified, 'simplified_model_withprevbev.onnx')
+    print("Checked",check)
     print("Export Successfully...")
 
 

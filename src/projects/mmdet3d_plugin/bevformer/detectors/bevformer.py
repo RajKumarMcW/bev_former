@@ -26,6 +26,7 @@ class BEVFormer(MVXTwoStageDetector):
 
     def __init__(self,
                  export=False,
+                 ort=False,
                  use_grid_mask=False,
                  pts_voxel_layer=None,
                  pts_voxel_encoder=None,
@@ -51,6 +52,7 @@ class BEVFormer(MVXTwoStageDetector):
                              pts_bbox_head, img_roi_head, img_rpn_head,
                              train_cfg, test_cfg, pretrained)
         self.export=export
+        self.ort=ort
         self.grid_mask = GridMask(
             True, True, rotate=1, offset=False, ratio=0.5, mode=1, prob=0.7)
         self.use_grid_mask = use_grid_mask
@@ -154,12 +156,9 @@ class BEVFormer(MVXTwoStageDetector):
         """
         #mcw
         if self.export:
-            img,prev_bev=args
-            can_bus = torch.tensor(np.fromfile("/media/ava/DATA2/Raj/BEVFormer/artifacts/can_bus.npy", dtype=np.float32))
-            lidar2img = torch.tensor(np.fromfile("/media/ava/DATA2/Raj/BEVFormer/artifacts/lidar2img.npy", dtype=np.float32)).reshape(1,6,4,4)
-            lidar2img = lidar2img[:,:6]
+            img,prev_bev,can_bus,lidar2img=args
             img_metas = [{'can_bus':can_bus, 'lidar2img':lidar2img}]
-            return self.forward_export( img,prev_bev,img_metas=img_metas,**kwargs)
+            return self.forward_export( img,prev_bev=prev_bev,img_metas=img_metas,**kwargs)
         
         if return_loss:
             return self.forward_train(**kwargs)
@@ -277,17 +276,18 @@ class BEVFormer(MVXTwoStageDetector):
         #     print("@@",self.prev_frame_info['prev_bev'].shape)
 
         #mcw
-        torch.manual_seed(42)
-        # print(img_metas[0][0])
-        # print(img[0])
-        # exit()
-        self.prev_frame_info['prev_bev'] = torch.randn(2500, 1, 256).cuda()
-        can_bus = torch.tensor(np.fromfile("/media/ava/DATA2/Raj/BEVFormer/artifacts/can_bus.npy", dtype=np.float32))
-        lidar2img = torch.tensor(np.fromfile("/media/ava/DATA2/Raj/BEVFormer/artifacts/lidar2img.npy", dtype=np.float32)).reshape(1,6,4,4)
-        # lidar2img = lidar2img[:,:6]
-        img_metas[0][0]['can_bus']=can_bus.numpy()
-        img_metas[0][0]['lidar2img']=[l.numpy() for l in lidar2img[0]]
-        # print(img_metas[0][0])
+        # torch.manual_seed(42)
+        # # print(img_metas[0][0])
+        # # print(img[0])
+        # # exit()
+        # if self.prev_frame_info['prev_bev']==None:
+        #     self.prev_frame_info['prev_bev'] = torch.zeros(2500, 1, 256).cuda()
+        # can_bus = torch.tensor(np.fromfile("/media/ava/DATA2/Raj/BEVFormer/artifacts/can_bus.npy", dtype=np.float32))
+        # lidar2img = torch.tensor(np.fromfile("/media/ava/DATA2/Raj/BEVFormer/artifacts/lidar2img.npy", dtype=np.float32)).reshape(1,6,4,4)
+        # # lidar2img = lidar2img[:,:6]
+        # img_metas[0][0]['can_bus']=can_bus.numpy()
+        # img_metas[0][0]['lidar2img']=[l.numpy() for l in lidar2img[0]]
+        # print(img_metas[0][0]['can_bus'],img_metas[0][0]['lidar2img'])
         # exit()
 
         new_prev_bev, bbox_results = self.simple_test(
@@ -302,14 +302,15 @@ class BEVFormer(MVXTwoStageDetector):
         """Test function"""
         outs = self.pts_bbox_head(x, img_metas, prev_bev=prev_bev)
         #mcw
-        print(outs)
-        for key, tensor in outs.items():
-            if tensor==None:
-                continue
-            np_array = tensor.cpu().numpy()
-            file_path = f"{key}.npy"
-            np.save(file_path, np_array)
-        exit()
+        # print(outs)
+        # for key, tensor in outs.items():
+        #     if tensor==None:
+        #         continue
+        #     np_array = tensor.cpu().numpy()
+        #     file_path = f"{key}.npy"
+        #     np.save(file_path, np_array)
+        # exit()
+
         bbox_list = self.pts_bbox_head.get_bboxes(
             outs, img_metas, rescale=rescale)
         bbox_results = [
@@ -320,16 +321,62 @@ class BEVFormer(MVXTwoStageDetector):
 
     def simple_test(self, img_metas, img=None, prev_bev=None, rescale=False):
         """Test function without augmentaiton."""
-        img_feats = self.extract_feat(img=img, img_metas=img_metas)
-        # print("@@")
-        # print(img_feats)
-        # exit()
-        bbox_list = [dict() for i in range(len(img_metas))]
-        new_prev_bev, bbox_pts = self.simple_test_pts(
-            img_feats, img_metas, prev_bev, rescale=rescale)
-        for result_dict, pts_bbox in zip(bbox_list, bbox_pts):
-            result_dict['pts_bbox'] = pts_bbox
-        return new_prev_bev, bbox_list
+        # print("@@",img,img_metas,prev_bev)
+        
+        if self.ort:
+            import onnxruntime as ort
+            img=img.unsqueeze(0)
+            can_bus = torch.tensor(img_metas[0]['can_bus'],dtype=torch.float64)
+            lidar2img = img_metas[0]['lidar2img']
+            lidar2img = torch.tensor(lidar2img).reshape(1,6,4,4)
+            lidar2img = lidar2img[:,:6]
+            if prev_bev==None:
+                sess=ort.InferenceSession("/media/ava/DATA2/Raj/BEVFormer/simplified_model_withoutprevbev.onnx",providers=['CUDAExecutionProvider'])
+                inputs = {
+                            'img.1': img.cpu().numpy(),
+                            'onnx::Unsqueeze_1': can_bus.cpu().numpy(),
+                            'onnx::Cast_2': lidar2img.cpu().numpy()
+                        }
+                output=sess.run(None, inputs)
+            else:
+                # sess_options = ort.SessionOptions()
+                # sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_BASIC
+                # sess_options.log_severity_level=1
+                sess=ort.InferenceSession("/media/ava/DATA2/Raj/BEVFormer/simplified_model_withprevbev.onnx",providers=['CUDAExecutionProvider'])
+                inputs = {
+                            'img.1': img.cpu().numpy(),
+                            'onnx::Gather_1': prev_bev.cpu().numpy(),
+                            'onnx::Gather_2': can_bus.cpu().numpy(),
+                            'onnx::Cast_3': lidar2img.cpu().numpy()
+                        }
+                output=sess.run(None, inputs)
+                
+            output={'bev_embed':torch.tensor(output[0]).cuda(),'all_cls_scores':torch.tensor(output[1]).cuda(),
+             'all_bbox_preds':torch.tensor(output[2]).cuda(),'enc_cls_scores': None, 'enc_bbox_preds': None}
+            # print(output)
+            # exit()
+            bbox_list = [dict() for i in range(len(img_metas))]
+            bbox_lists = self.pts_bbox_head.get_bboxes(
+                output, img_metas, rescale=rescale)
+            bbox_results = [
+                bbox3d2result(bboxes, scores, labels)
+                for bboxes, scores, labels in bbox_lists
+            ]
+            for result_dict, pts_bbox in zip(bbox_list, bbox_results):
+                result_dict['pts_bbox'] = pts_bbox
+            return output['bev_embed'], bbox_list
+        else:
+            img_feats = self.extract_feat(img=img, img_metas=img_metas)
+            # print("@@")
+            # print(img_feats)
+            # exit()
+            
+            bbox_list = [dict() for i in range(len(img_metas))]
+            new_prev_bev, bbox_pts = self.simple_test_pts(
+                img_feats, img_metas, prev_bev, rescale=rescale)
+            for result_dict, pts_bbox in zip(bbox_list, bbox_pts):
+                result_dict['pts_bbox'] = pts_bbox
+            return new_prev_bev, bbox_list
 
     # mcw
     def forward_export(self, img,prev_bev,img_metas):
@@ -339,6 +386,7 @@ class BEVFormer(MVXTwoStageDetector):
 
     def simple_export(self, img_metas, img=None, prev_bev=None, rescale=False):
         """Test function without augmentaiton."""
+        # print("@@",img,img_metas,prev_bev)
         img_feats = self.extract_feat(img=img, img_metas=img_metas) #torch.Size([1, 6, 256, 15, 25])
         
         # bbox_list = [dict() for i in range(len(img_metas))]
@@ -351,6 +399,7 @@ class BEVFormer(MVXTwoStageDetector):
         # print("@@")
         # print(img_feats)
         # exit()
+        # print("@@",prev_bev)
         out = self.pts_bbox_head(img_feats, img_metas, prev_bev=prev_bev,export=True)
         return out
     

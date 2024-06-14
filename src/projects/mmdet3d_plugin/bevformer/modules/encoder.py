@@ -167,7 +167,7 @@ class BEVFormerEncoder(TransformerLayerSequence):
         # lidar2img = reference_points.new_tensor(lidar2img)  # (B, N, 4, 4)
         # reference_points = reference_points.clone()
         # mcw
-        lidar2img = img_metas[0]['lidar2img']
+        lidar2img = img_metas[0]['lidar2img'].float()
         reference_points = reference_points.clone()
 
         reference_points[..., 0:1] = reference_points[..., 0:1] * \
@@ -200,11 +200,12 @@ class BEVFormerEncoder(TransformerLayerSequence):
         reference_points_cam = reference_points_cam[..., 0:2] / torch.maximum(
             reference_points_cam[..., 2:3], torch.ones_like(reference_points_cam[..., 2:3]) * eps)
         # mcw
-        # img_metas[0]['img_shape'][0]) (480, 800, 3)
+        # print(img_metas[0]['img_shape'][0]) #(480, 800, 3)
         # reference_points_cam[..., 0] /= img_metas[0]['img_shape'][0][1]
         # reference_points_cam[..., 1] /= img_metas[0]['img_shape'][0][0]
-        reference_points_cam[..., 0] /= 800
-        reference_points_cam[..., 1] /= 480
+        # reference_points_cam[..., 0] /= 800
+        # reference_points_cam[..., 1] /= 480
+        reference_points_cam[..., :2] /= torch.tensor([800.0, 480.0],device=reference_points_cam.device)
 
         bev_mask = (bev_mask & (reference_points_cam[..., 1:2] > 0.0)
                     & (reference_points_cam[..., 1:2] < 1.0)
@@ -291,6 +292,7 @@ class BEVFormerEncoder(TransformerLayerSequence):
             hybird_ref_2d = torch.stack([ref_2d, ref_2d], 1).reshape(
                 bs*2, len_bev, num_bev_level, 2)
 
+        #mcw
         # from einops import rearrange
         # bev_query = rearrange(bev_query, 'n (h w) d -> n h w d', h=50)
         # bev_pos = rearrange(bev_pos, 'n (h w) d -> n h w d',h=50)
