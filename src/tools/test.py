@@ -233,38 +233,35 @@ def main():
         # outputs = single_gpu_test(model, data_loader, args.show, args.show_dir)
     
     #mcw
-    elif cfg.export:
+    elif cfg.model.export:
         print("EXPORT")
-        import numpy as np
         model=model.cpu()
-        # model.forward = partial(model.forward_export)
         model.eval()
         for i, data in enumerate(data_loader):
             with torch.no_grad():
-                inputs = {} 
-                inputs['img'] = data['img'][0].data[0].float().unsqueeze(0)#.cuda()
                 torch.manual_seed(42)
-                inputs['prev_bev'] = torch.rand(2500, 1, 256)
+                img = data['img'][0].data[0].float().unsqueeze(0)
+                prev_bev = torch.rand(2500, 1, 256)
                 can_bus=data['img_metas'][0].data[0][0]['can_bus']
                 lidar2img=data['img_metas'][0].data[0][0]['lidar2img']
                 lidar2img = torch.tensor(lidar2img).reshape(1,6,4,4)
-                lidar2img = lidar2img[:,:6]#.cuda()
-                can_bus = torch.tensor(can_bus)#.cuda()
+                lidar2img = lidar2img[:,:6]
+                can_bus = torch.tensor(can_bus)
                 torch.onnx.export(
                     model, 
-                    (inputs['img'],inputs['prev_bev'],can_bus,lidar2img), 
-                    "bevformer.onnx", 
+                    (img,prev_bev,can_bus,lidar2img), 
+                    "artifacts/bevformer.onnx", 
                     export_params=True, 
                     verbose=True,
                     opset_version=16,
                 )
                 break
-        check_model = onnx.load("bevformer.onnx")
+        check_model = onnx.load("artifacts/bevformer.onnx")
         onnx.checker.check_model(check_model)
-        model = onnx.load("/media/ava/DATA2/Raj/BEVFormer/bevformer.onnx")
+        model = onnx.load("artifacts/bevformer.onnx")
         model_simplified, check = simplify(model, check_n=3)
         assert check, 'assert check failed'
-        onnx.save(model_simplified, 'simplified_model_withprevbev.onnx')
+        onnx.save(model_simplified, "artifacts/simplified_model_withprevbev1.onnx")
         print("Checked",check)
         print("Export Successfully...")
         exit()

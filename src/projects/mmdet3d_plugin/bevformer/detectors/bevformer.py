@@ -302,7 +302,7 @@ class BEVFormer(MVXTwoStageDetector):
             lidar2img = torch.tensor(lidar2img).reshape(1,6,4,4)
             lidar2img = lidar2img[:,:6]
             if prev_bev==None:
-                sess=ort.InferenceSession("/media/ava/DATA2/Raj/BEVFormer/simplified_model_withoutprevbev.onnx",providers=['CUDAExecutionProvider'])
+                sess=ort.InferenceSession("artifacts/simplified_model_withoutprevbev.onnx",providers=['CUDAExecutionProvider'])
                 inputs = {
                             'img.1': img.cpu().numpy(),
                             'onnx::Unsqueeze_1': can_bus.cpu().numpy(),
@@ -310,7 +310,7 @@ class BEVFormer(MVXTwoStageDetector):
                         }
                 output=sess.run(None, inputs)
             else:
-                sess=ort.InferenceSession("/media/ava/DATA2/Raj/BEVFormer/simplified_model_withprevbev.onnx",providers=['CUDAExecutionProvider'])
+                sess=ort.InferenceSession("artifacts/simplified_model_withprevbev.onnx",providers=['CUDAExecutionProvider'])
                 inputs = {
                             'img.1': img.cpu().numpy(),
                             'onnx::Gather_1': prev_bev.cpu().numpy(),
@@ -344,7 +344,7 @@ class BEVFormer(MVXTwoStageDetector):
     # mcw
     def forward_export(self, img,prev_bev,img_metas):
         out=self.simple_export(
-            img_metas, img[0], prev_bev=prev_bev, rescale=True)
+            img_metas, img[0], prev_bev=prev_bev)
         return out
 
     def simple_export(self, img_metas, img=None, prev_bev=None):
