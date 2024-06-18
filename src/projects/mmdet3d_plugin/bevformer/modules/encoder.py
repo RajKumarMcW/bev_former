@@ -98,9 +98,6 @@ class BEVFormerEncoder(TransformerLayerSequence):
         lidar2img = np.asarray(lidar2img)
         lidar2img = reference_points.new_tensor(lidar2img)  # (B, N, 4, 4)
         reference_points = reference_points.clone()
-        # mcw
-        # lidar2img = img_metas[0]['lidar2img']
-        # reference_points = reference_points.clone()
 
         reference_points[..., 0:1] = reference_points[..., 0:1] * \
             (pc_range[3] - pc_range[0]) + pc_range[0]
@@ -114,9 +111,7 @@ class BEVFormerEncoder(TransformerLayerSequence):
 
         reference_points = reference_points.permute(1, 0, 2, 3)
         D, B, num_query = reference_points.size()[:3]
-        # mcw
-        num_cam = 6
-        # num_cam = lidar2img.size(1)
+        num_cam = lidar2img.size(1)
 
         reference_points = reference_points.view(
             D, B, 1, num_query, 4).repeat(1, 1, num_cam, 1, 1).unsqueeze(-1)
@@ -152,7 +147,8 @@ class BEVFormerEncoder(TransformerLayerSequence):
         torch.backends.cudnn.allow_tf32 = allow_tf32
 
         return reference_points_cam, bev_mask
-    
+
+
     @force_fp32(apply_to=('reference_points', 'img_metas'))
     def point_sampling_export(self, reference_points, pc_range,  img_metas):
         # NOTE: close tf32 here.
@@ -238,7 +234,8 @@ class BEVFormerEncoder(TransformerLayerSequence):
                 level_start_index=None,
                 valid_ratios=None,
                 prev_bev=None,
-                shift=0.,export=False,
+                shift=0.,
+                export=False,
                 **kwargs):
         """Forward function for `TransformerDecoder`.
         Args:
@@ -266,6 +263,7 @@ class BEVFormerEncoder(TransformerLayerSequence):
             bev_h, bev_w, self.pc_range[5]-self.pc_range[2], self.num_points_in_pillar, dim='3d', bs=bev_query.size(1),  device=bev_query.device, dtype=bev_query.dtype)
         ref_2d = self.get_reference_points(
             bev_h, bev_w, dim='2d', bs=bev_query.size(1), device=bev_query.device, dtype=bev_query.dtype)
+
         # mcw
         if export:
             reference_points_cam, bev_mask = self.point_sampling_export(
@@ -292,36 +290,6 @@ class BEVFormerEncoder(TransformerLayerSequence):
             hybird_ref_2d = torch.stack([ref_2d, ref_2d], 1).reshape(
                 bs*2, len_bev, num_bev_level, 2)
 
-        #mcw
-        # from einops import rearrange
-        # bev_query = rearrange(bev_query, 'n (h w) d -> n h w d', h=50)
-        # bev_pos = rearrange(bev_pos, 'n (h w) d -> n h w d',h=50)
-        # if prev_bev is not None:
-        #     prev_bev = rearrange(prev_bev, 'n (h w) d -> n h w d', h=50)
-
-        # if export:
-        #     for lid, layer in enumerate(self.layers):
-        #         output = layer(
-        #             bev_query,
-        #             key,
-        #             value,
-        #             *args,
-        #             bev_pos=bev_pos,
-        #             ref_2d=hybird_ref_2d,
-        #             ref_3d=ref_3d,
-        #             bev_h=bev_h,
-        #             bev_w=bev_w,
-        #             spatial_shapes=spatial_shapes,
-        #             level_start_index=level_start_index,
-        #             reference_points_cam=reference_points_cam,
-        #             bev_mask=bev_mask,
-        #             prev_bev=prev_bev,export=True,
-        #             **kwargs)
-
-        #         bev_query = output
-        #         if self.return_intermediate:
-        #             intermediate.append(output)
-        # else:
         for lid, layer in enumerate(self.layers):
             output = layer(
                 bev_query,

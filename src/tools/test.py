@@ -23,6 +23,8 @@ from projects.mmdet3d_plugin.bevformer.apis.test import custom_multi_gpu_test
 from mmdet.datasets import replace_ImageToTensor
 import time
 import os.path as osp
+import onnx
+from onnxsim import simplify
 
 
 def parse_args():
@@ -123,8 +125,6 @@ def main():
         raise ValueError('The output file must be a pkl file.')
 
     cfg = Config.fromfile(args.config)
-    print("Config:\n",cfg,"\n")
-
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)
     # import modules from string list.
@@ -227,46 +227,48 @@ def main():
         # segmentation dataset has `PALETTE` attribute
         model.PALETTE = dataset.PALETTE
 
-    #mcw
-    # print("EXPORT")
-    # import numpy as np
-
-    # from functools import partial
-    # model=model.cpu()
-    # model.forward = partial(model.forward_test)
-    # model.eval()
-    # for i, data in enumerate(data_loader):
-    #     with torch.no_grad():
-    #         inputs = {} 
-    #         inputs['img'] = data['img'][0].data[0].float().unsqueeze(0)
-    #         inputs['img_metas'] = [[None]]
-    #         inputs['img_metas'][0][0] = {}
-
-    #         inputs['img_metas'][0][0]['can_bus'] = torch.from_numpy(np.array(data['img_metas'][0].data[0][0]['can_bus'])).float()
-    #         inputs['img_metas'][0][0]['lidar2img'] = torch.from_numpy(np.array(data['img_metas'][0].data[0][0]['lidar2img'])).float()
-    #         inputs['img_metas'][0][0]['scene_token'] = 'fcbccedd61424f1b85dcbf8f897f9754'
-    #         inputs['img_metas'][0][0]['img_shape'] = torch.Tensor([[480, 800]])
-    #         # print(inputs['img_metas'], inputs['img'])
-    #         torch.onnx.export(
-    #             model, 
-    #             (inputs['img_metas'], inputs['img']), 
-    #             "artifacts/bevformer.onnx", 
-    #             export_params=True, 
-    #             verbose=True,
-    #             opset_version=16,
-    #         )
-    #         break
-    # import onnx
-    # check_model = onnx.load("artifacts/bevformer.onnx")
-    # onnx.checker.check_model(check_model)
-    # print("Checked")
-    # print("Export Successfully...")
-    # exit()
-
     if not distributed:
         assert False
         # model = MMDataParallel(model, device_ids=[0])
         # outputs = single_gpu_test(model, data_loader, args.show, args.show_dir)
+    
+    #mcw
+    elif cfg.export:
+        print("EXPORT")
+        import numpy as np
+        model=model.cpu()
+        # model.forward = partial(model.forward_export)
+        model.eval()
+        for i, data in enumerate(data_loader):
+            with torch.no_grad():
+                inputs = {} 
+                inputs['img'] = data['img'][0].data[0].float().unsqueeze(0)#.cuda()
+                torch.manual_seed(42)
+                inputs['prev_bev'] = torch.rand(2500, 1, 256)
+                can_bus=data['img_metas'][0].data[0][0]['can_bus']
+                lidar2img=data['img_metas'][0].data[0][0]['lidar2img']
+                lidar2img = torch.tensor(lidar2img).reshape(1,6,4,4)
+                lidar2img = lidar2img[:,:6]#.cuda()
+                can_bus = torch.tensor(can_bus)#.cuda()
+                torch.onnx.export(
+                    model, 
+                    (inputs['img'],inputs['prev_bev'],can_bus,lidar2img), 
+                    "bevformer.onnx", 
+                    export_params=True, 
+                    verbose=True,
+                    opset_version=16,
+                )
+                break
+        check_model = onnx.load("bevformer.onnx")
+        onnx.checker.check_model(check_model)
+        model = onnx.load("/media/ava/DATA2/Raj/BEVFormer/bevformer.onnx")
+        model_simplified, check = simplify(model, check_n=3)
+        assert check, 'assert check failed'
+        onnx.save(model_simplified, 'simplified_model_withprevbev.onnx')
+        print("Checked",check)
+        print("Export Successfully...")
+        exit()
+
     else:
         model = MMDistributedDataParallel(
             model.cuda(),

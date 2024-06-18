@@ -21,7 +21,6 @@ def custom_train_model(model,
     Because we need different eval_hook in runner. Should be deprecated in the
     future.
     """
-    distributed=False
     if cfg.model.type in ['EncoderDecoder3D']:
         assert False
     else:
