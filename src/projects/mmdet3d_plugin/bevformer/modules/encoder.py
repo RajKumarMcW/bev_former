@@ -148,7 +148,7 @@ class BEVFormerEncoder(TransformerLayerSequence):
 
         return reference_points_cam, bev_mask
 
-
+    #Added point_sampling_export
     @force_fp32(apply_to=('reference_points', 'img_metas'))
     def point_sampling_export(self, reference_points, pc_range,  img_metas):
         # NOTE: close tf32 here.
@@ -162,7 +162,6 @@ class BEVFormerEncoder(TransformerLayerSequence):
         # lidar2img = np.asarray(lidar2img)
         # lidar2img = reference_points.new_tensor(lidar2img)  # (B, N, 4, 4)
         # reference_points = reference_points.clone()
-        # mcw
         lidar2img = img_metas[0]['lidar2img'].float()
         reference_points = reference_points.clone()
 
@@ -178,9 +177,8 @@ class BEVFormerEncoder(TransformerLayerSequence):
 
         reference_points = reference_points.permute(1, 0, 2, 3)
         D, B, num_query = reference_points.size()[:3]
-        # mcw
-        num_cam = 6
-        # num_cam = lidar2img.size(1)
+
+        num_cam = lidar2img.size(1)
 
         reference_points = reference_points.view(
             D, B, 1, num_query, 4).repeat(1, 1, num_cam, 1, 1).unsqueeze(-1)
@@ -195,12 +193,10 @@ class BEVFormerEncoder(TransformerLayerSequence):
         bev_mask = (reference_points_cam[..., 2:3] > eps)
         reference_points_cam = reference_points_cam[..., 0:2] / torch.maximum(
             reference_points_cam[..., 2:3], torch.ones_like(reference_points_cam[..., 2:3]) * eps)
-        # mcw
+        # hardcoded reference_points_cam 
         # print(img_metas[0]['img_shape'][0]) #(480, 800, 3)
         # reference_points_cam[..., 0] /= img_metas[0]['img_shape'][0][1]
         # reference_points_cam[..., 1] /= img_metas[0]['img_shape'][0][0]
-        # reference_points_cam[..., 0] /= 800
-        # reference_points_cam[..., 1] /= 480
         reference_points_cam[..., :2] /= torch.tensor([800.0, 480.0],device=reference_points_cam.device)
 
         bev_mask = (bev_mask & (reference_points_cam[..., 1:2] > 0.0)

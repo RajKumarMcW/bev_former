@@ -135,10 +135,13 @@ class SpatialCrossAttention(BaseModule):
 
         D = reference_points_cam.size(3)
         indexes = []
+        indexes_mask = []
         for i, mask_per_img in enumerate(bev_mask):
-            #mcw
+            # Make indexes as static
             # index_query_per_img = mask_per_img[0].sum(-1).nonzero().squeeze(-1)
-            index_query_per_img = torch.topk(mask_per_img[0].sum(-1), 2500, largest=True).indices
+            index_query_per_img_values, index_query_per_img = torch.topk(mask_per_img[0].sum(-1), bev_mask.size(2), largest=True).indices
+            index_query_per_img_mask = index_query_per_img_values >= 1
+            indexes_mask.append(index_query_per_img_mask)
             indexes.append(index_query_per_img)
         max_len = max([len(each) for each in indexes])
 
@@ -164,6 +167,9 @@ class SpatialCrossAttention(BaseModule):
         queries = self.deformable_attention(query=queries_rebatch.view(bs*self.num_cams, max_len, self.embed_dims), key=key, value=value,
                                             reference_points=reference_points_rebatch.view(bs*self.num_cams, max_len, D, 2), spatial_shapes=spatial_shapes,
                                             level_start_index=level_start_index).view(bs, self.num_cams, max_len, self.embed_dims)
+        # apply the indexes_mask to queries
+        indexes_mask=torch.stack(indexes_mask).unsqueeze(-1)
+        queries*=indexes_mask
         for j in range(bs):
             for i, index_query_per_img in enumerate(indexes):
                 slots[j, index_query_per_img] += queries[j, i, :len(index_query_per_img)]

@@ -248,7 +248,7 @@ class TemporalSelfAttention(BaseModule):
                 value, spatial_shapes, level_start_index, sampling_locations,
                 attention_weights, self.im2col_step)
         else:
-            # mcw
+            # converting the arguments to float
             # output = multi_scale_deformable_attn_pytorch(
             #     value, spatial_shapes, sampling_locations, attention_weights)
             output = multi_scale_deformable_attn_pytorch(value.float(), spatial_shapes, sampling_locations.float(), attention_weights.float())

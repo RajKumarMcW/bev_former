@@ -156,7 +156,7 @@ class BEVFormer(MVXTwoStageDetector):
         list[list[dict]]), with the outer list indicating test time
         augmentations.
         """
-        #mcw
+        # Added forward_export
         if self.export:
             img,prev_bev,can_bus,lidar2img=args
             img_metas = [{'can_bus':can_bus, 'lidar2img':lidar2img}]
@@ -294,7 +294,7 @@ class BEVFormer(MVXTwoStageDetector):
 
     def simple_test(self, img_metas, img=None, prev_bev=None, rescale=False):
         """Test function without augmentaiton."""
-        #mcw 
+        # Added Onnx Runtime Validation
         if self.ort:
             img=img.unsqueeze(0)
             can_bus = torch.tensor(img_metas[0]['can_bus'],dtype=torch.float64)
@@ -341,14 +341,8 @@ class BEVFormer(MVXTwoStageDetector):
                 result_dict['pts_bbox'] = pts_bbox
             return new_prev_bev, bbox_list
 
-    # mcw
+    # Added forward_export
     def forward_export(self, img,prev_bev,img_metas):
-        out=self.simple_export(
-            img_metas, img[0], prev_bev=prev_bev)
-        return out
-
-    def simple_export(self, img_metas, img=None, prev_bev=None):
-        """Test function without augmentaiton."""
-        img_feats = self.extract_feat(img=img, img_metas=img_metas)
+        img_feats = self.extract_feat(img=img[0], img_metas=img_metas)
         out = self.pts_bbox_head(img_feats, img_metas, prev_bev=prev_bev,export=True)
         return out

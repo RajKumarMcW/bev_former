@@ -200,7 +200,7 @@ class PerceptionTransformer(BaseModule):
 
         return bev_embed
 
-    #mcw
+    # Added get_bev_features_export
     @auto_fp16(apply_to=('mlvl_feats', 'bev_queries', 'prev_bev', 'bev_pos'))
     def get_bev_features_export(
             self,
@@ -227,11 +227,16 @@ class PerceptionTransformer(BaseModule):
         #                    for each in kwargs['img_metas']])
         # ego_angle = np.array(
         #     [each['can_bus'][-2] / np.pi * 180 for each in kwargs['img_metas']])
-        # grid_length_y = grid_length[0]
-        # grid_length_x = grid_length[1]
+        delta_x = kwargs['img_metas'][0]['can_bus'][0].unsqueeze(0).float() 
+        delta_y = kwargs['img_metas'][0]['can_bus'][1].unsqueeze(0).float()
+        ego_angle = kwargs['img_metas'][0]['can_bus'][-2].unsqueeze(0).float()/ np.pi * 180  
+        grid_length_y = grid_length[0]
+        grid_length_x = grid_length[1]
         # translation_length = np.sqrt(delta_x ** 2 + delta_y ** 2)
         # translation_angle = np.arctan2(delta_y, delta_x) / np.pi * 180
-        # bev_angle = ego_angle - translation_angle
+        translation_length = torch.sqrt(delta_x ** 2 + delta_y ** 2)
+        translation_angle = onnx_atan2(delta_y,delta_x)/ np.pi * 180
+        bev_angle = ego_angle - translation_angle
         # shift_y = translation_length * \
         #     np.cos(bev_angle / 180 * np.pi) / grid_length_y / bev_h
         # shift_x = translation_length * \
@@ -240,15 +245,6 @@ class PerceptionTransformer(BaseModule):
         # shift_x = shift_x * self.use_shift
         # shift = bev_queries.new_tensor(
         #     [shift_x, shift_y]).permute(1, 0)  # xy, bs -> bs, xy
-        # mcw        
-        delta_x = kwargs['img_metas'][0]['can_bus'][0].unsqueeze(0).float() 
-        delta_y = kwargs['img_metas'][0]['can_bus'][1].unsqueeze(0).float()
-        ego_angle = kwargs['img_metas'][0]['can_bus'][-2].unsqueeze(0).float()/ np.pi * 180
-        grid_length_y = grid_length[0]
-        grid_length_x = grid_length[1]
-        translation_length = torch.sqrt(delta_x ** 2 + delta_y ** 2)
-        translation_angle = onnx_atan2(delta_y,delta_x)/ np.pi * 180
-        bev_angle = ego_angle - translation_angle
         shift_y = translation_length * \
             torch.cos(bev_angle / 180 * np.pi) / grid_length_y / bev_h
         shift_x = translation_length * \
@@ -256,17 +252,20 @@ class PerceptionTransformer(BaseModule):
         shift_y = shift_y * int(self.use_shift)
         shift_x = shift_x * int(self.use_shift)
         shift = torch.stack([shift_x, shift_y]).permute(1, 0)  # xy, bs -> bs, xy
-       
+
+ 
         if prev_bev is not None:
             if prev_bev.shape[1] == bev_h * bev_w:
                 prev_bev = prev_bev.permute(1, 0, 2)
             if self.rotate_prev_bev:
                 for i in range(bs):
-                    #mcw
-                    # rotation_angle = kwargs['img_metas'][i]['can_bus'][-1]
+                    # num_prev_bev = prev_bev.size(1)
                     rotation_angle = kwargs['img_metas'][i]['can_bus'][-1]
                     tmp_prev_bev = prev_bev[:, i].reshape(
                         bev_h, bev_w, -1).permute(2, 0, 1)
+                    # Added custom rotate function  
+                    # tmp_prev_bev = rotate(tmp_prev_bev, rotation_angle,
+                    #                       center=self.rotate_center)
                     tmp_prev_bev = rot_img(tmp_prev_bev, rotation_angle,
                                           center=self.rotate_center)
                     tmp_prev_bev = tmp_prev_bev.permute(1, 2, 0).reshape(
@@ -274,14 +273,11 @@ class PerceptionTransformer(BaseModule):
                     prev_bev[:, i] = tmp_prev_bev[:, 0]
 
         # add can bus signals
-        # mcw
         # can_bus = bev_queries.new_tensor(
         #     [each['can_bus'] for each in kwargs['img_metas']])  # [:, :]
-        can_bus =  kwargs['img_metas'][0]['can_bus'].unsqueeze(0).float()
-        
+        can_bus =  kwargs['img_metas'][0]['can_bus'].unsqueeze(0).float()       
         can_bus = self.can_bus_mlp(can_bus)[None, :, :]
-        # mcw
-        # bug i commented this line previously
+        # bev_queries = bev_queries + can_bus * self.use_can_bus
         bev_queries = bev_queries + can_bus * int(self.use_can_bus)
 
         feat_flatten = []
@@ -322,7 +318,7 @@ class PerceptionTransformer(BaseModule):
         )
 
         return bev_embed
-    
+
     @auto_fp16(apply_to=('mlvl_feats', 'bev_queries', 'object_query_embed', 'prev_bev', 'bev_pos'))
     def forward(self,
                 mlvl_feats,
@@ -374,7 +370,7 @@ class PerceptionTransformer(BaseModule):
                     otherwise None.
         """
 
-        #mcw
+        # Added get_bev_features_export
         if export:
             bev_embed = self.get_bev_features_export(
                 mlvl_feats,

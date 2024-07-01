@@ -231,8 +231,8 @@ def main():
         assert False
         # model = MMDataParallel(model, device_ids=[0])
         # outputs = single_gpu_test(model, data_loader, args.show, args.show_dir)
-    
-    #mcw
+   
+    # Added For Onnx export
     elif cfg.model.export:
         print("EXPORT")
         model=model.cpu()
@@ -300,6 +300,6 @@ def main():
 
 
 if __name__ == '__main__':
-    #mcw
+    # Added to solve the TypeError: cannot pickle 'dict_keys' object
     torch.multiprocessing.set_start_method('fork')
     main()
