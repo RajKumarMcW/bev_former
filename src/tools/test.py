@@ -259,9 +259,9 @@ def main():
         check_model = onnx.load("artifacts/bevformer.onnx")
         onnx.checker.check_model(check_model)
         model = onnx.load("artifacts/bevformer.onnx")
-        model_simplified, check = simplify(model, check_n=3)
+        model_simplified, check = simplify(model)
         assert check, 'assert check failed'
-        onnx.save(model_simplified, "artifacts/simplified_model_withprevbev1.onnx")
+        onnx.save(model_simplified, "artifacts/simplified_model_withprevbev.onnx")
         print("Checked",check)
         print("Export Successfully...")
         exit()

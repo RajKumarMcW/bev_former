@@ -139,7 +139,7 @@ class SpatialCrossAttention(BaseModule):
         for i, mask_per_img in enumerate(bev_mask):
             # Make indexes as static
             # index_query_per_img = mask_per_img[0].sum(-1).nonzero().squeeze(-1)
-            index_query_per_img_values, index_query_per_img = torch.topk(mask_per_img[0].sum(-1), bev_mask.size(2), largest=True).indices
+            index_query_per_img_values, index_query_per_img = torch.topk(mask_per_img[0].sum(-1), bev_mask.size(2), largest=True)
             index_query_per_img_mask = index_query_per_img_values >= 1
             indexes_mask.append(index_query_per_img_mask)
             indexes.append(index_query_per_img)
